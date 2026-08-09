@@ -37,6 +37,7 @@ export default function ReportQueue({ campaigns: initial }: { campaigns: Campaig
 
   async function handleApprove(id: string) {
     if (busyId) return;
+    if (!confirm("Approve this report? The client will be able to see per-number delivery status immediately.")) return;
     setBusyId(id);
     const target = campaigns.find((c) => c.id === id);
     const res = await fetch(`/api/admin/campaigns/${id}/approve-report`, { method: "POST" });
@@ -101,7 +102,7 @@ export default function ReportQueue({ campaigns: initial }: { campaigns: Campaig
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <a
                 href={`/api/admin/campaigns/${c.id}/report.csv`}
-                className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-admin-border)] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-white/5"
+                className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] border border-[var(--color-border-strong)] bg-white px-3 py-2 text-sm font-medium text-[var(--color-ink-700)] transition-colors hover:bg-[var(--color-ink-50)]"
               >
                 <Download className="size-3.5" aria-hidden />
                 Download report

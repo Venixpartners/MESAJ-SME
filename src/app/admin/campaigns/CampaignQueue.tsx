@@ -31,6 +31,7 @@ export default function CampaignQueue({ campaigns: initial }: { campaigns: Campa
 
   async function handleApprove(id: string) {
     if (busyId) return;
+    if (!confirm("Approve and send this campaign? Messages will go out to recipients immediately.")) return;
     setBusyId(id);
     const target = campaigns.find((c) => c.id === id);
     const res = await fetch(`/api/admin/campaigns/approve`, {
