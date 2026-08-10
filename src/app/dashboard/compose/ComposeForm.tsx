@@ -5,6 +5,7 @@ import { Bookmark, CheckCircle2, Repeat2, Upload, XCircle } from "lucide-react";
 import { getSegmentInfo } from "@/lib/smsSegments";
 import { parseNumbersFromCsv } from "@/lib/numbers";
 import { MAX_RECIPIENTS_PER_CAMPAIGN, MAX_REQUEST_BODY_BYTES, MAX_MESSAGE_CHARS } from "@/lib/limits";
+import type { ComplianceFailure } from "@/lib/campaignCompliance";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
@@ -64,6 +65,16 @@ export default function ComposeForm({
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [complianceFailures, setComplianceFailures] = useState<ComplianceFailure[] | null>(null);
+  // Every handler in this form clears the error state before doing its
+  // own thing — this keeps complianceFailures (only ever set by the
+  // submit handler) from lingering stale on screen if the client, say,
+  // fixes their message and clicks "Check numbers" instead of
+  // resubmitting directly.
+  function clearError() {
+    setError(null);
+    setComplianceFailures(null);
+  }
   // Synchronous guard against a true double-invocation of
   // handleAgreeAndSend (e.g. a double-click landing before the
   // `submitting` state has re-rendered the button as disabled) — React
@@ -112,7 +123,7 @@ export default function ComposeForm({
   async function handleSaveMessage() {
     if (!message.trim()) return;
     setSavingMessage(true);
-    setError(null);
+    clearError();
     try {
       const res = await fetch("/api/saved-messages", {
         method: "POST",
@@ -132,7 +143,7 @@ export default function ComposeForm({
   async function loadContactList(id: string) {
     if (!id) return;
     setLoadingListId(id);
-    setError(null);
+    clearError();
     try {
       const res = await fetch(`/api/contact-lists/${id}`);
       const data = await res.json();
@@ -166,7 +177,7 @@ export default function ComposeForm({
     const numbers = parseNumbers();
     if (!newListName.trim() || numbers.length === 0) return;
     setSavingList(true);
-    setError(null);
+    clearError();
     try {
       const res = await fetch("/api/contact-lists", {
         method: "POST",
@@ -190,7 +201,7 @@ export default function ComposeForm({
   }
 
   async function handleReview() {
-    setError(null);
+    clearError();
     setResult(null);
     const numbers = parseNumbers();
     if (numbers.length === 0) {
@@ -227,6 +238,7 @@ export default function ComposeForm({
     submitInFlightRef.current = true;
     setSubmitting(true);
     setError(null);
+    setComplianceFailures(null);
 
     // A fresh key per submit attempt. This isn't primarily about the
     // double-click case above (the ref guard already handles that) — it's
@@ -245,8 +257,28 @@ export default function ComposeForm({
         body: JSON.stringify({ senderId, message, numbers: parseNumbers() }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Submission failed");
-      setResult("Campaign submitted for approval. You'll be notified once it's reviewed.");
+      if (!res.ok) {
+        // A 422 from the NCC compliance check (see /api/campaigns/submit,
+        // lib/campaignCompliance.ts) carries a complianceFailures array
+        // with the specific reason(s) — e.g. "promo needs a date" — not
+        // just a generic "doesn't meet requirements" string. Surface
+        // those specifically so the client can actually fix the message,
+        // rather than guessing what's wrong from one flat sentence.
+        if (Array.isArray(data.complianceFailures) && data.complianceFailures.length > 0) {
+          setComplianceFailures(data.complianceFailures);
+        }
+        throw new Error(data.error ?? "Submission failed");
+      }
+      // Whether this campaign actually started sending immediately or is
+      // sitting in the ordinary admin queue depends on autoApproved,
+      // which the API only sets when the message passed every NCC
+      // hard-fail check (see lib/campaignCompliance.ts) — the two cases
+      // are genuinely different outcomes and shouldn't share one message.
+      setResult(
+        data.autoApproved
+          ? "Campaign approved and sending now — no review needed."
+          : "Campaign submitted for approval. You'll be notified once it's reviewed."
+      );
       setValidation(null);
       setMessage("");
       setNumbersText("");
@@ -419,7 +451,18 @@ export default function ComposeForm({
             )}
           </div>
 
-          {error && <Alert tone="danger">{error}</Alert>}
+          {error && (
+            <Alert tone="danger">
+              <p>{error}</p>
+              {complianceFailures && complianceFailures.length > 0 && (
+                <ul className="mt-1.5 list-disc space-y-0.5 pl-4">
+                  {complianceFailures.map((f) => (
+                    <li key={f.rule}>{f.reason}</li>
+                  ))}
+                </ul>
+              )}
+            </Alert>
+          )}
           {result && <Alert tone="success">{result}</Alert>}
 
           <Button onClick={handleReview} loading={checking} disabled={!message || !senderId}>
