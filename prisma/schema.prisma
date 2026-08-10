@@ -226,6 +226,16 @@ model Campaign {
   reviewedByAdmin  User?          @relation("ReviewedBy", fields: [reviewedByAdminId], references: [id])
   createdAt        DateTime       @default(now())
   approvedAt       DateTime?
+  /// True when this campaign skipped human review entirely — its message
+  /// passed every NCC hard-fail check (see lib/campaignCompliance.ts) at
+  /// submit time, so it went straight to APPROVED with reviewedByAdminId
+  /// left null. False for everything reviewed by an actual admin,
+  /// including the (currently unbuilt) soft-flag path, which will always
+  /// route to a human regardless of what the hard-fail check finds.
+  /// Exists as its own column rather than being inferred from
+  /// reviewedByAdminId being null, so a compliance audit can filter on it
+  /// directly without relying on that inference staying true forever.
+  autoApproved     Boolean        @default(false)
 
   /// Delivery report visibility gate — a client's MSISDN/telco/status report
   /// only becomes visible on their dashboard once an admin explicitly

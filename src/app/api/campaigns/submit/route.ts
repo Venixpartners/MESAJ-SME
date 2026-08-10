@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cleanAndSortNumbers } from "@/lib/numbers";
 import { createClient } from "@/lib/supabase/server";
@@ -8,6 +9,8 @@ import { loadCarrierOverrides } from "@/lib/portedNumbers";
 import { checkContentLength, checkRecipientCount, MAX_MESSAGE_SEGMENTS } from "@/lib/limits";
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit";
 import { isUniqueConstraintViolation } from "@/lib/prismaErrors";
+import { checkHardFailRules } from "@/lib/campaignCompliance";
+import { claimCampaignForSending, processNextCampaignBatch } from "@/lib/campaignSendProcessor";
 
 /**
  * Builds the same response shape POST returns for a freshly created
@@ -41,8 +44,20 @@ function idempotentResponse(campaign: {
  *
  * Called after the client has seen the exclusion pop-up and clicked "Agree".
  * Re-validates numbers server-side (never trust client-reported counts),
- * checks wallet balance, deducts estimated cost, and creates the campaign
- * in PENDING_APPROVAL for the admin queue.
+ * checks wallet balance, deducts estimated cost, and creates the campaign.
+ *
+ * Compliance: the message is checked against the NCC hard-fail rules
+ * (lib/campaignCompliance.ts) BEFORE any of that — a message that fails
+ * is rejected with 422 and never becomes a campaign at all, nothing
+ * charged, nothing created. A message that passes every hard-fail check
+ * skips human review entirely: it's auto-approved and starts sending
+ * immediately (see claimCampaignForSending in campaignSendProcessor.ts,
+ * the same function the admin approve route uses). This is a genuine
+ * change from the original all-campaigns-need-a-human model — see the
+ * NCC guideline doc for what's and isn't automated, and why the
+ * remaining judgment-call clauses ("unfair disparagement," "exaggerated
+ * value," etc.) still aren't checked here and would still need a human
+ * if/when that's built.
  *
  * Idempotency: the rate limiter below stops abuse, but not a legitimate
  * double-click or a client retrying after a dropped response — both send
@@ -55,9 +70,6 @@ function idempotentResponse(campaign: {
  * see prisma/migrations/..._campaign_idempotency_key — not just an
  * in-request check, so two concurrent requests with the same key can't
  * both slip through before either commits.
- *
- * Note: this does NOT call Mesaj yet. Sending only happens after admin
- * approval — see /api/admin/campaigns/approve.
  */
 export async function POST(req: NextRequest) {
   const sizeError = checkContentLength(req);
@@ -111,6 +123,23 @@ export async function POST(req: NextRequest) {
 
   if (!senderId || !message || !Array.isArray(numbers)) {
     return NextResponse.json({ error: "senderId, message, and numbers are required" }, { status: 400 });
+  }
+
+  // NCC hard-fail compliance check — cheapest possible place to reject:
+  // before segment/number validation, before touching the wallet, before
+  // creating any row at all. A message that fails here never becomes a
+  // campaign, so there's nothing to clean up — the client just sees why
+  // and can fix it and resubmit. See lib/campaignCompliance.ts for what's
+  // actually checked and why only these specific rules are automated.
+  const compliance = checkHardFailRules(message);
+  if (!compliance.passed) {
+    return NextResponse.json(
+      {
+        error: "Message doesn't meet NCC advertising requirements.",
+        complianceFailures: compliance.failures,
+      },
+      { status: 422 }
+    );
   }
 
   const segmentInfo = getSegmentInfo(message);
@@ -212,6 +241,38 @@ export async function POST(req: NextRequest) {
       }
     }
     throw err;
+  }
+
+  // Every rule in lib/campaignCompliance.ts already passed (checked
+  // before the campaign was even created, above) — so the message
+  // cleared every automated check there is right now, and doesn't need a
+  // human in the loop. Auto-approve immediately, reusing the exact same
+  // atomic-claim function the admin approve route uses (see
+  // lib/campaignSendProcessor.ts claimCampaignForSending) so there's one
+  // single code path for "a campaign becomes APPROVED and starts
+  // sending," whether a human or the compliance check made that call.
+  //
+  // If this can't proceed for a structural reason unrelated to the
+  // message itself (e.g. the Sender ID has no carrier actually approved
+  // yet, so there's nothing eligible to send to) — deliberately don't
+  // fail the whole request over that. The campaign stays PENDING_APPROVAL
+  // exactly as it always did before this feature existed, and falls back
+  // to the ordinary admin queue. The client already paid into escrow for
+  // this campaign; a scary error for a problem that isn't about their
+  // message text would be the wrong failure mode here.
+  const autoApproval = await claimCampaignForSending({
+    campaignId: campaign.id,
+    reviewedByAdminId: null,
+    auditActorId: null,
+    auditNotesPrefix: "Auto-approved (passed NCC hard-fail checks)",
+  });
+
+  if (autoApproval.ok) {
+    after(() => processNextCampaignBatch(campaign.id));
+    return NextResponse.json(
+      { campaign: { ...campaign, status: "APPROVED", autoApproved: true }, validatedCounts: cleaned, autoApproved: true },
+      { status: 201 }
+    );
   }
 
   return NextResponse.json({ campaign, validatedCounts: cleaned }, { status: 201 });

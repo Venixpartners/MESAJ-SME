@@ -82,6 +82,89 @@ function computeRemainingBatches(campaign: CampaignWithSendContext): CarrierBatc
 }
 
 /**
+ * Shared "approve and begin sending" logic — the single source of truth
+ * for both the admin approve route AND the auto-approve path in
+ * /api/campaigns/submit (see lib/campaignCompliance.ts). Deliberately
+ * extracted rather than duplicated: this is exactly the kind of atomic
+ * claim-guarded-on-status logic that's caused real races elsewhere in
+ * this codebase when written twice (see the wallet-balance reservation
+ * fix), and a divergence here specifically could mean a campaign gets
+ * approved-and-sent twice, or sent despite failing its own status check.
+ *
+ * Does NOT call after() itself — Next.js's after() needs to be invoked
+ * directly within a route handler's own execution to correctly attach to
+ * that request's lifecycle, not from a few layers of awaited helper
+ * functions deep. Callers get back whether to schedule the send and with
+ * what campaignId, and call after() themselves.
+ *
+ * auditActorId is separate from reviewedByAdminId: a human approval sets
+ * both to the same admin's id. An auto-approval (message cleared every
+ * NCC hard-fail check, no human involved) sets reviewedByAdminId to null
+ * and auditActorId to null too — AdminAuditLog.adminId is a required,
+ * non-nullable foreign key to a real User, and there IS no user to
+ * attribute a system decision to, so the audit log entry is skipped
+ * entirely for that case rather than attributing it to an arbitrary
+ * admin who didn't make the call. Campaign.autoApproved is the durable
+ * record of what happened instead (see prisma/schema.prisma).
+ */
+export async function claimCampaignForSending(params: {
+  campaignId: string;
+  reviewedByAdminId: string | null;
+  auditActorId: string | null;
+  auditNotesPrefix: string;
+}): Promise<{ ok: true; carrierBatchesQueued: number } | { ok: false; status: number; error: string }> {
+  const campaign = await prisma.campaign.findUnique({
+    where: { id: params.campaignId },
+    include: { senderId: { include: { carrierStatuses: true } } },
+  });
+
+  if (!campaign) {
+    return { ok: false, status: 404, error: "Campaign not found" };
+  }
+  if (campaign.status !== "PENDING_APPROVAL") {
+    return { ok: false, status: 409, error: `Campaign is not pending approval (status: ${campaign.status})` };
+  }
+
+  const eligibleBatches = computeEligibleCarrierBatches(campaign);
+  if (eligibleBatches.length === 0) {
+    return { ok: false, status: 409, error: "No approved carriers with valid recipients to send to" };
+  }
+
+  // Atomic claim guarded on current status — prevents two concurrent
+  // approvals (e.g. an admin clicking Approve at the same instant the
+  // compliance auto-approve path would have fired, or two admins both
+  // approving) from both passing the status check and starting two send
+  // chains for the same campaign, which would double-charge the client
+  // AND send the same messages twice to their customers.
+  const claimed = await prisma.campaign.updateMany({
+    where: { id: campaign.id, status: "PENDING_APPROVAL" },
+    data: {
+      status: "APPROVED",
+      reviewedByAdminId: params.reviewedByAdminId,
+      approvedAt: new Date(),
+      autoApproved: params.reviewedByAdminId === null,
+    },
+  });
+  if (claimed.count === 0) {
+    return { ok: false, status: 409, error: "Campaign was already processed by another request" };
+  }
+
+  if (params.auditActorId) {
+    await prisma.adminAuditLog.create({
+      data: {
+        adminId: params.auditActorId,
+        actionType: "CAMPAIGN_APPROVE",
+        targetType: "Campaign",
+        targetId: campaign.id,
+        notes: `${params.auditNotesPrefix} — sending across ${eligibleBatches.length} carrier batch(es) in the background`,
+      },
+    });
+  }
+
+  return { ok: true, carrierBatchesQueued: eligibleBatches.length };
+}
+
+/**
  * Fires an authenticated internal HTTP request to trigger the next hop —
  * a genuinely fresh serverless invocation with its own full time budget,
  * not just a continued in-process loop. Awaited only long enough for the

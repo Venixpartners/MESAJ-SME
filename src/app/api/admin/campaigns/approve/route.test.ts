@@ -10,12 +10,6 @@ vi.mock("next/server", async (importOriginal) => {
   // scheduled with the right arguments).
   return { ...actual, after: vi.fn((cb: () => unknown) => cb()) };
 });
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
-    campaign: { findUnique: vi.fn(), updateMany: vi.fn() },
-    adminAuditLog: { create: vi.fn() },
-  },
-}));
 vi.mock("@/lib/adminAuth", () => ({
   requireAdminApi: vi.fn(),
 }));
@@ -25,21 +19,19 @@ vi.mock("@/lib/rateLimit", () => ({
   RATE_LIMITS: { ADMIN_SEND: { limit: 30, windowMs: 60_000 } },
 }));
 vi.mock("@/lib/campaignSendProcessor", () => ({
-  computeEligibleCarrierBatches: vi.fn(),
+  claimCampaignForSending: vi.fn(),
   processNextCampaignBatch: vi.fn(),
 }));
 
 import { POST } from "./route";
 import { after } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/adminAuth";
 import { checkRateLimit } from "@/lib/rateLimit";
-import { computeEligibleCarrierBatches, processNextCampaignBatch } from "@/lib/campaignSendProcessor";
+import { claimCampaignForSending, processNextCampaignBatch } from "@/lib/campaignSendProcessor";
 
-const mockedPrisma = vi.mocked(prisma, { deep: true });
 const mockedRequireAdminApi = vi.mocked(requireAdminApi);
 const mockedCheckRateLimit = vi.mocked(checkRateLimit);
-const mockedComputeEligible = vi.mocked(computeEligibleCarrierBatches);
+const mockedClaim = vi.mocked(claimCampaignForSending);
 const mockedProcessNext = vi.mocked(processNextCampaignBatch);
 const mockedAfter = vi.mocked(after);
 
@@ -57,21 +49,13 @@ function postRequest(body: unknown): NextRequest {
   });
 }
 
-const PENDING_CAMPAIGN = {
-  id: "campaign-1",
-  tenantId: "tenant-1",
-  status: "PENDING_APPROVAL",
-  senderId: { carrierStatuses: [{ carrier: "MTN", status: "APPROVED", approvedShortcode: "MYBIZ" }] },
-};
-
 beforeEach(() => {
   vi.clearAllMocks();
   mockedCheckRateLimit.mockResolvedValue({ allowed: true, limit: 30, remaining: 29, resetAt: new Date() });
-  mockedPrisma.campaign.updateMany.mockResolvedValue({ count: 1 } as never);
-  mockedComputeEligible.mockReturnValue([{ carrier: "MTN", shortCode: "MYBIZ", recipients: ["234800000000"] }] as never);
+  mockedClaim.mockResolvedValue({ ok: true, carrierBatchesQueued: 1 });
 });
 
-describe("POST /api/admin/campaigns/approve", () => {
+describe("POST /api/admin/campaigns/approve — access control", () => {
   it("returns the auth response for a non-admin/unauthenticated caller", async () => {
     mockedRequireAdminApi.mockResolvedValue({
       ok: false,
@@ -80,6 +64,7 @@ describe("POST /api/admin/campaigns/approve", () => {
 
     const res = await POST(postRequest({ campaignId: "campaign-1" }));
     expect(res.status).toBe(403);
+    expect(mockedClaim).not.toHaveBeenCalled();
   });
 
   it("returns 429 when rate limited, before touching the campaign", async () => {
@@ -89,51 +74,40 @@ describe("POST /api/admin/campaigns/approve", () => {
     const res = await POST(postRequest({ campaignId: "campaign-1" }));
 
     expect(res.status).toBe(429);
-    expect(mockedPrisma.campaign.findUnique).not.toHaveBeenCalled();
+    expect(mockedClaim).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/admin/campaigns/approve — delegates to claimCampaignForSending as a human reviewer", () => {
+  it("calls claimCampaignForSending with the admin as both reviewer and audit actor", async () => {
+    mockAdminOk();
+
+    await POST(postRequest({ campaignId: "campaign-1" }));
+
+    expect(mockedClaim).toHaveBeenCalledWith({
+      campaignId: "campaign-1",
+      reviewedByAdminId: "admin-1",
+      auditActorId: "admin-1",
+      auditNotesPrefix: "Approved",
+    });
   });
 
-  it("returns 404 when the campaign doesn't exist", async () => {
+  it("maps a claim failure straight through to the response, without scheduling a send", async () => {
     mockAdminOk();
-    mockedPrisma.campaign.findUnique.mockResolvedValue(null);
-
-    const res = await POST(postRequest({ campaignId: "nope" }));
-    expect(res.status).toBe(404);
-  });
-
-  it("returns 409 when the campaign isn't PENDING_APPROVAL", async () => {
-    mockAdminOk();
-    mockedPrisma.campaign.findUnique.mockResolvedValue({ ...PENDING_CAMPAIGN, status: "SENT" } as never);
+    mockedClaim.mockResolvedValue({ ok: false, status: 409, error: "Campaign is not pending approval (status: SENT)" });
 
     const res = await POST(postRequest({ campaignId: "campaign-1" }));
-    expect(res.status).toBe(409);
-  });
-
-  it("returns 409 when no carrier is both approved and has valid recipients", async () => {
-    mockAdminOk();
-    mockedPrisma.campaign.findUnique.mockResolvedValue(PENDING_CAMPAIGN as never);
-    mockedComputeEligible.mockReturnValue([]);
-
-    const res = await POST(postRequest({ campaignId: "campaign-1" }));
+    const body = await res.json();
 
     expect(res.status).toBe(409);
-    expect(mockedPrisma.campaign.updateMany).not.toHaveBeenCalled();
-  });
-
-  it("returns 409 if a concurrent request already claimed the campaign", async () => {
-    mockAdminOk();
-    mockedPrisma.campaign.findUnique.mockResolvedValue(PENDING_CAMPAIGN as never);
-    mockedPrisma.campaign.updateMany.mockResolvedValue({ count: 0 } as never);
-
-    const res = await POST(postRequest({ campaignId: "campaign-1" }));
-
-    expect(res.status).toBe(409);
+    expect(body.error).toMatch(/not pending approval/);
     expect(mockedAfter).not.toHaveBeenCalled();
     expect(mockedProcessNext).not.toHaveBeenCalled();
   });
 
-  it("claims the campaign, logs it, schedules the send chain via after(), and returns 202 without waiting for it", async () => {
+  it("on success: schedules the send chain via after() and returns 202 without waiting for it", async () => {
     mockAdminOk();
-    mockedPrisma.campaign.findUnique.mockResolvedValue(PENDING_CAMPAIGN as never);
+    mockedClaim.mockResolvedValue({ ok: true, carrierBatchesQueued: 2 });
 
     const res = await POST(postRequest({ campaignId: "campaign-1" }));
     const body = await res.json();
@@ -141,13 +115,7 @@ describe("POST /api/admin/campaigns/approve", () => {
     expect(res.status).toBe(202);
     expect(body.status).toBe("APPROVED");
     expect(body.sending).toBe(true);
-    expect(mockedPrisma.campaign.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: "campaign-1", status: "PENDING_APPROVAL" },
-        data: expect.objectContaining({ status: "APPROVED", reviewedByAdminId: "admin-1" }),
-      })
-    );
-    expect(mockedPrisma.adminAuditLog.create).toHaveBeenCalled();
+    expect(body.carrierBatchesQueued).toBe(2);
     expect(mockedAfter).toHaveBeenCalledWith(expect.any(Function));
     expect(mockedProcessNext).toHaveBeenCalledWith("campaign-1");
   });

@@ -6,11 +6,12 @@ vi.mock("@sentry/nextjs", () => ({
 }));
 vi.mock("./prisma", () => ({
   prisma: {
-    campaign: { findUnique: vi.fn(), update: vi.fn() },
+    campaign: { findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
     campaignCarrierBatch: { create: vi.fn(), update: vi.fn() },
     messageRecipient: { count: vi.fn() },
     tenant: { update: vi.fn() },
     walletTransaction: { create: vi.fn() },
+    adminAuditLog: { create: vi.fn() },
   },
 }));
 vi.mock("./mesajClient", async (importOriginal) => {
@@ -24,7 +25,7 @@ vi.mock("./messageRecipients", () => ({
   recordMessageRecipients: vi.fn(),
 }));
 
-import { processNextCampaignBatch, computeEligibleCarrierBatches } from "./campaignSendProcessor";
+import { processNextCampaignBatch, computeEligibleCarrierBatches, claimCampaignForSending } from "./campaignSendProcessor";
 import { prisma } from "./prisma";
 import { sendCampaignAcrossCarriers } from "./mesajClient";
 import { notifyCampaignSent } from "./notifications";
@@ -270,5 +271,127 @@ describe("processNextCampaignBatch", () => {
     expect(mockedCaptureException).toHaveBeenCalled();
     expect(mockedPrisma.campaign.update).not.toHaveBeenCalled();
     expect(mockedPrisma.tenant.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("claimCampaignForSending", () => {
+  const PENDING_CAMPAIGN = {
+    id: "campaign-1",
+    status: "PENDING_APPROVAL",
+    validatedNumbersJson: JSON.stringify({ MTN: ["234800000000"], AIRTEL: [], GLO: [], MOBILE9: [] }),
+    senderId: { carrierStatuses: [{ carrier: "MTN", status: "APPROVED", approvedShortcode: "MYBIZ" }] },
+  };
+
+  beforeEach(() => {
+    mockedPrisma.campaign.findUnique.mockResolvedValue(PENDING_CAMPAIGN as never);
+    mockedPrisma.campaign.updateMany.mockResolvedValue({ count: 1 } as never);
+  });
+
+  it("returns 404 when the campaign doesn't exist", async () => {
+    mockedPrisma.campaign.findUnique.mockResolvedValue(null);
+
+    const result = await claimCampaignForSending({
+      campaignId: "missing",
+      reviewedByAdminId: "admin-1",
+      auditActorId: "admin-1",
+      auditNotesPrefix: "Approved",
+    });
+
+    expect(result).toEqual({ ok: false, status: 404, error: "Campaign not found" });
+    expect(mockedPrisma.campaign.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 when the campaign isn't PENDING_APPROVAL", async () => {
+    mockedPrisma.campaign.findUnique.mockResolvedValue({ ...PENDING_CAMPAIGN, status: "SENT" } as never);
+
+    const result = await claimCampaignForSending({
+      campaignId: "campaign-1",
+      reviewedByAdminId: "admin-1",
+      auditActorId: "admin-1",
+      auditNotesPrefix: "Approved",
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.status).toBe(409);
+    expect(mockedPrisma.campaign.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 when no carrier is both approved and has valid recipients", async () => {
+    mockedPrisma.campaign.findUnique.mockResolvedValue({
+      ...PENDING_CAMPAIGN,
+      senderId: { carrierStatuses: [{ carrier: "MTN", status: "PENDING", approvedShortcode: null }] },
+    } as never);
+
+    const result = await claimCampaignForSending({
+      campaignId: "campaign-1",
+      reviewedByAdminId: "admin-1",
+      auditActorId: "admin-1",
+      auditNotesPrefix: "Approved",
+    });
+
+    expect(result.ok).toBe(false);
+    expect(mockedPrisma.campaign.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 if a concurrent request already claimed the campaign (updateMany affected zero rows)", async () => {
+    mockedPrisma.campaign.updateMany.mockResolvedValue({ count: 0 } as never);
+
+    const result = await claimCampaignForSending({
+      campaignId: "campaign-1",
+      reviewedByAdminId: "admin-1",
+      auditActorId: "admin-1",
+      auditNotesPrefix: "Approved",
+    });
+
+    expect(result).toEqual({ ok: false, status: 409, error: "Campaign was already processed by another request" });
+    expect(mockedPrisma.adminAuditLog.create).not.toHaveBeenCalled();
+  });
+
+  describe("human approval path (reviewedByAdminId set)", () => {
+    it("claims the campaign with autoApproved: false and writes an audit log entry", async () => {
+      const result = await claimCampaignForSending({
+        campaignId: "campaign-1",
+        reviewedByAdminId: "admin-1",
+        auditActorId: "admin-1",
+        auditNotesPrefix: "Approved",
+      });
+
+      expect(result).toEqual({ ok: true, carrierBatchesQueued: 1 });
+      expect(mockedPrisma.campaign.updateMany).toHaveBeenCalledWith({
+        where: { id: "campaign-1", status: "PENDING_APPROVAL" },
+        data: expect.objectContaining({ status: "APPROVED", reviewedByAdminId: "admin-1", autoApproved: false }),
+      });
+      expect(mockedPrisma.adminAuditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ adminId: "admin-1", actionType: "CAMPAIGN_APPROVE" }) })
+      );
+    });
+  });
+
+  describe("auto-approval path (reviewedByAdminId null — no human involved)", () => {
+    it("claims the campaign with autoApproved: true and reviewedByAdminId null", async () => {
+      const result = await claimCampaignForSending({
+        campaignId: "campaign-1",
+        reviewedByAdminId: null,
+        auditActorId: null,
+        auditNotesPrefix: "Auto-approved (passed NCC hard-fail checks)",
+      });
+
+      expect(result).toEqual({ ok: true, carrierBatchesQueued: 1 });
+      expect(mockedPrisma.campaign.updateMany).toHaveBeenCalledWith({
+        where: { id: "campaign-1", status: "PENDING_APPROVAL" },
+        data: expect.objectContaining({ status: "APPROVED", reviewedByAdminId: null, autoApproved: true }),
+      });
+    });
+
+    it("does NOT write an AdminAuditLog entry — there's no real admin to attribute it to (adminId is a required FK)", async () => {
+      await claimCampaignForSending({
+        campaignId: "campaign-1",
+        reviewedByAdminId: null,
+        auditActorId: null,
+        auditNotesPrefix: "Auto-approved (passed NCC hard-fail checks)",
+      });
+
+      expect(mockedPrisma.adminAuditLog.create).not.toHaveBeenCalled();
+    });
   });
 });

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/adminAuth";
-import { computeEligibleCarrierBatches, processNextCampaignBatch } from "@/lib/campaignSendProcessor";
+import { claimCampaignForSending, processNextCampaignBatch } from "@/lib/campaignSendProcessor";
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit";
 
 /**
@@ -50,57 +49,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "campaignId is required" }, { status: 400 });
   }
 
-  const campaign = await prisma.campaign.findUnique({
-    where: { id: campaignId },
-    include: { senderId: { include: { carrierStatuses: true } } },
+  const result = await claimCampaignForSending({
+    campaignId,
+    reviewedByAdminId: admin.id,
+    auditActorId: admin.id,
+    auditNotesPrefix: "Approved",
   });
-
-  if (!campaign) {
-    return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error }, { status: result.status });
   }
-  if (campaign.status !== "PENDING_APPROVAL") {
-    return NextResponse.json({ error: `Campaign is not pending approval (status: ${campaign.status})` }, { status: 409 });
-  }
-
-  const eligibleBatches = computeEligibleCarrierBatches(campaign);
-  if (eligibleBatches.length === 0) {
-    return NextResponse.json(
-      { error: "No approved carriers with valid recipients to send to" },
-      { status: 409 }
-    );
-  }
-
-  // Mark approved atomically, guarded on current status — same pattern as
-  // the wallet reservation fixes. Prevents two concurrent approve requests
-  // for the same campaign from both passing the status check and causing a
-  // duplicate send chain to start (which would double-charge the client
-  // AND send the same messages twice to their customers).
-  const claimed = await prisma.campaign.updateMany({
-    where: { id: campaign.id, status: "PENDING_APPROVAL" },
-    data: {
-      status: "APPROVED",
-      reviewedByAdminId: admin.id,
-      approvedAt: new Date(),
-    },
-  });
-  if (claimed.count === 0) {
-    return NextResponse.json({ error: "Campaign was already processed by another request" }, { status: 409 });
-  }
-
-  await prisma.adminAuditLog.create({
-    data: {
-      adminId: admin.id,
-      actionType: "CAMPAIGN_APPROVE",
-      targetType: "Campaign",
-      targetId: campaign.id,
-      notes: `Approved, sending across ${eligibleBatches.length} carrier batch(es) in the background`,
-    },
-  });
 
   // Kick off the first carrier's send after this response is sent — see
   // the module doc comment above for why this is a chain of separate
   // invocations rather than one long await here.
-  after(() => processNextCampaignBatch(campaign.id));
+  after(() => processNextCampaignBatch(campaignId));
 
-  return NextResponse.json({ status: "APPROVED", sending: true, carrierBatchesQueued: eligibleBatches.length }, { status: 202 });
+  return NextResponse.json(
+    { status: "APPROVED", sending: true, carrierBatchesQueued: result.carrierBatchesQueued },
+    { status: 202 }
+  );
 }
