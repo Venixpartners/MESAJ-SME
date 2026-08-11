@@ -41,7 +41,23 @@ export default function EmailConfirmedPage() {
 
       const supabase = createClient();
       const { error } = await supabase.auth.exchangeCodeForSession(code);
-      setStatus(error ? "error" : "success");
+
+      if (error) {
+        // PKCE codes are single-use, and the exchange only succeeds in the
+        // same browser that started signup (it reads a locally-stored
+        // verifier). If this effect ever runs a second time for the same
+        // code — a page refresh, the link opened twice, React re-running
+        // the effect — the SECOND attempt fails even though the first one
+        // may have already succeeded and logged the person in. Before
+        // treating this as a real failure, check whether a session
+        // actually exists already; if it does, the confirmation already
+        // worked and this is just a harmless re-run, not a broken link.
+        const { data } = await supabase.auth.getSession();
+        setStatus(data.session ? "success" : "error");
+        return;
+      }
+
+      setStatus("success");
     }
     exchange();
   }, []);
