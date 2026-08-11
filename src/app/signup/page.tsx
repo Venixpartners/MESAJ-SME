@@ -20,7 +20,17 @@ export default function SignupPage() {
     setLoading(true);
     setError(null);
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        // Without this, Supabase falls back to the project's Site URL —
+        // the marketing homepage, with no acknowledgment and no session
+        // established. See src/app/auth/confirmed/page.tsx for what
+        // actually happens once they land there.
+        emailRedirectTo: `${window.location.origin}/auth/confirmed`,
+      },
+    });
     setLoading(false);
     if (error) {
       setError(error.message);
