@@ -29,7 +29,7 @@ export default function LoginPage() {
 
     // Route based on role: admins go straight to /admin, clients go to
     // /onboarding if they haven't completed it yet, otherwise /dashboard.
-    const res = await fetch("/api/whoami");
+    const res = await fetch("/api/whoami", { cache: "no-store" });
     const who = await res.json();
     setLoading(false);
     if (who.role === "ADMIN") {

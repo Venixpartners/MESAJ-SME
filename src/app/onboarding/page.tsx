@@ -24,7 +24,7 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     async function checkOnboardingStatus() {
-      const res = await fetch("/api/whoami");
+      const res = await fetch("/api/whoami", { cache: "no-store" });
       const who = await res.json();
       if (who.onboarded) {
         router.replace("/dashboard");
