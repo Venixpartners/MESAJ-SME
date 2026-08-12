@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Field, FieldGroup, Input } from "@/components/ui/Field";
@@ -13,7 +13,27 @@ export default function OnboardingPage() {
   const [contactPhone, setContactPhone] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Starts true: before we know whether this account is already
+  // onboarded, showing the form at all would be wrong — someone who
+  // already completed this (e.g. logged out and back in, or opened this
+  // URL again from an old tab/bookmark) would otherwise see a blank form,
+  // fill it in again, and hit a 409 with no way forward except the same
+  // submit button that fails the same way every time.
+  const [checkingStatus, setCheckingStatus] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    async function checkOnboardingStatus() {
+      const res = await fetch("/api/whoami");
+      const who = await res.json();
+      if (who.onboarded) {
+        router.replace("/dashboard");
+        return;
+      }
+      setCheckingStatus(false);
+    }
+    checkOnboardingStatus();
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,11 +46,27 @@ export default function OnboardingPage() {
     });
     setLoading(false);
     if (!res.ok) {
+      // The mount-time check above closes the common case, but a genuine
+      // race is still possible (e.g. two tabs both mid-onboarding, or the
+      // account got onboarded by something else between page load and
+      // submit) — the server's atomic guard (see /api/onboarding) is what
+      // actually prevents a duplicate Tenant either way. If THIS is what
+      // happened, there's nothing left to fix by staying on this form:
+      // send them on to the dashboard that now genuinely exists, rather
+      // than leaving them stuck re-submitting into the same 409 forever.
+      if (res.status === 409) {
+        router.push("/dashboard");
+        return;
+      }
       const data = await res.json();
       setError(data.error ?? "Something went wrong");
       return;
     }
     router.push("/dashboard");
+  }
+
+  if (checkingStatus) {
+    return <div className="flex min-h-screen items-center justify-center bg-[var(--color-canvas)]" />;
   }
 
   return (
