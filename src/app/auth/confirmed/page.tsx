@@ -6,6 +6,26 @@ import { createClient } from "@/lib/supabase/client";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
+type WhoamiResponse = { role: string | null; onboarded: boolean };
+
+/**
+ * Same retry-on-401 shape as /login (see fetchWhoamiWithRetry there) — the
+ * session cookie from exchangeCodeForSession() below can take a brief
+ * moment to be ready for the very next same-origin fetch.
+ */
+async function fetchWhoamiWithRetry(maxAttempts = 3): Promise<WhoamiResponse> {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const res = await fetch("/api/whoami");
+    if (res.status !== 401) {
+      return res.json();
+    }
+    if (attempt < maxAttempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+  }
+  return { role: null, onboarded: false };
+}
+
 /**
  * Where Supabase actually lands someone after they click the confirmation
  * link in their signup email — set via `emailRedirectTo` on the
@@ -64,12 +84,21 @@ export default function EmailConfirmedPage() {
 
   useEffect(() => {
     if (status !== "success") return;
-    // Auto-advance after a moment — onboarding (business name, CAC
-    // number, sector) is the actual next required step, not another
-    // signup form. The brief pause is just so "Email confirmed" is
-    // visible and registers before the page moves on, not a functional
-    // delay.
-    const timer = setTimeout(() => router.push("/onboarding"), 1500);
+    // Auto-advance after a moment — route based on actual account state
+    // rather than assuming onboarding is always next. Covers the edge
+    // case of someone clicking an old/stale confirmation link after
+    // they've already completed onboarding (or an admin account, in
+    // principle) — same routing logic as /login.
+    const timer = setTimeout(async () => {
+      const who = await fetchWhoamiWithRetry();
+      if (who.role === "ADMIN") {
+        router.push("/admin");
+      } else if (!who.onboarded) {
+        router.push("/onboarding");
+      } else {
+        router.push("/dashboard");
+      }
+    }, 1500);
     return () => clearTimeout(timer);
   }, [status, router]);
 
@@ -92,7 +121,7 @@ export default function EmailConfirmedPage() {
             </div>
             <h1 className="mt-4 text-xl font-semibold text-[var(--color-ink-900)]">Email confirmed!</h1>
             <p className="mt-2 text-sm leading-relaxed text-[var(--color-ink-500)]">
-              Taking you to set up your business…
+              Taking you to your account…
             </p>
           </>
         )}
