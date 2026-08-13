@@ -15,7 +15,7 @@ type WhoamiResponse = { role: string | null; onboarded: boolean };
  */
 async function fetchWhoamiWithRetry(maxAttempts = 3): Promise<WhoamiResponse> {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const res = await fetch("/api/whoami");
+    const res = await fetch("/api/whoami", { cache: "no-store" });
     if (res.status !== 401) {
       return res.json();
     }
