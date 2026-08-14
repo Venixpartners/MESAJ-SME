@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, MessageSquareText, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { Footer } from "@/components/Footer";
 
 const FEATURES = [
   {
@@ -77,6 +78,8 @@ export default function Home() {
           ))}
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
