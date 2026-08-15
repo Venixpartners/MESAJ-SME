@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { senderIdRequestSchema, parseOrError } from "@/lib/validation";
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit";
 import { validateCacDocument, uploadCacDocument, deleteCacDocument, buildCacDocumentPath } from "@/lib/cacDocument";
+import { notifyAdminNewSenderIdRequest } from "@/lib/notifications";
 
 const CARRIERS = ["MTN", "AIRTEL", "GLO", "MOBILE9"] as const;
 
@@ -100,6 +101,18 @@ export async function POST(req: NextRequest) {
       where: { id: senderId.id },
       data: { cacDocumentPath: path, cacDocumentContentType: file.type, cacDocumentUploadedAt: new Date() },
       include: { carrierStatuses: true },
+    });
+    // Best-effort — same "never fail the actual action" reasoning as the
+    // onboarding notification. Only fires here, not in the catch block
+    // below, since the email specifically links to a downloadable CAC
+    // document — not true if the upload itself failed.
+    await notifyAdminNewSenderIdRequest({
+      businessName,
+      requestedName,
+      cacNumber,
+      sector,
+      senderIdId: senderId.id,
+      appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
     });
     return NextResponse.json(updated, { status: 201 });
   } catch (err) {

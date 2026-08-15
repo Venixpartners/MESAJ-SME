@@ -103,18 +103,6 @@ export async function notifyCampaignRejected(params: {
 }
 
 /**
- * Sent when admin approves a campaign and it's actually sent to Mesaj (see
- * /api/admin/campaigns/approve). Covers three distinct outcomes so the
- * client never has to check the dashboard to find out what happened to
- * money they've already been charged for:
- *  - Fully sent: every recipient across every approved carrier went out.
- *  - Partially sent: some carrier batch(es) failed — totalSent > 0 but
- *    less than recipientCount. The difference was already refunded by the
- *    approve route before this fires.
- *  - Fully failed: every carrier batch failed (totalSent === 0). Same
- *    refund-already-happened note applies.
- */
-/**
  * Sent when admin approves a campaign's delivery report for client
  * visibility (see /api/admin/campaigns/[id]/approve-report). The report
  * itself (MSISDN, telco, status per recipient) isn't included in the
@@ -184,4 +172,104 @@ export async function notifyCampaignSent(params: {
       ${refundParagraph}
     `),
   });
+}
+
+/**
+ * Internal, admin-facing notifications — the other direction from
+ * everything above this line. Both trigger points (new signup, new Sender
+ * ID request) previously required admin to notice by checking the
+ * dashboard; these email admin the moment either happens instead, with a
+ * real link to act on it immediately rather than just "go check the
+ * dashboard."
+ *
+ * Recipients come from ADMIN_NOTIFICATION_EMAILS (comma-separated), not
+ * hardcoded, so who gets these can change without a code deploy. If it's
+ * unset, both functions no-op — a misconfigured notification should never
+ * be the thing that fails a signup or a Sender ID request. Sent as
+ * individual emails per recipient (not relying on sendEmail supporting a
+ * multi-address `to`) so this stays correct regardless of what shape
+ * sendEmail's `to` parameter currently accepts.
+ */
+function adminRecipients(): string[] {
+  return (process.env.ADMIN_NOTIFICATION_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim())
+    .filter(Boolean);
+}
+
+/** Sent when a new tenant completes onboarding (see POST /api/onboarding). */
+export async function notifyAdminNewSignup(params: {
+  businessName: string;
+  contactEmail: string;
+  contactPhone: string;
+  sector: string;
+  appUrl: string;
+}) {
+  const recipients = adminRecipients();
+  if (recipients.length === 0) return { success: false, error: "ADMIN_NOTIFICATION_EMAILS not configured" };
+
+  const { businessName, contactEmail, contactPhone, sector, appUrl } = params;
+
+  return Promise.all(
+    recipients.map((to) =>
+      sendEmail({
+        to,
+        subject: `New signup: ${businessName}`,
+        html: wrapHtml(`
+          <p>A new business just completed onboarding.</p>
+          <p>
+            <strong>Business:</strong> ${escapeHtml(businessName)}<br />
+            <strong>Sector:</strong> ${escapeHtml(sector)}<br />
+            <strong>Contact email:</strong> ${escapeHtml(contactEmail)}<br />
+            <strong>Contact phone:</strong> ${escapeHtml(contactPhone)}
+          </p>
+          <p><a href="${escapeHtml(appUrl)}/admin" style="color: #16a34a;">Log in to view their account</a></p>
+        `),
+      })
+    )
+  );
+}
+
+/**
+ * Sent when a client submits a Sender ID request with its CAC document
+ * (see POST /api/sender-id/request). Includes two links: one to the
+ * admin Sender ID review queue (login required), and one that goes
+ * straight to the CAC document itself via the existing admin-only
+ * signed-URL route (see lib/cacDocument.ts) — clicking it either opens
+ * the file directly (if already logged in) or prompts login first, so
+ * "review, then download, then start processing" is one or two clicks
+ * from the email, not a hunt through the dashboard.
+ */
+export async function notifyAdminNewSenderIdRequest(params: {
+  businessName: string;
+  requestedName: string;
+  cacNumber: string;
+  sector: string;
+  senderIdId: string;
+  appUrl: string;
+}) {
+  const recipients = adminRecipients();
+  if (recipients.length === 0) return { success: false, error: "ADMIN_NOTIFICATION_EMAILS not configured" };
+
+  const { businessName, requestedName, cacNumber, sector, senderIdId, appUrl } = params;
+
+  return Promise.all(
+    recipients.map((to) =>
+      sendEmail({
+        to,
+        subject: `New Sender ID request: ${requestedName}`,
+        html: wrapHtml(`
+          <p>A new Sender ID request came in, with a CAC document attached for review.</p>
+          <p>
+            <strong>Business:</strong> ${escapeHtml(businessName)}<br />
+            <strong>Requested Sender ID:</strong> ${escapeHtml(requestedName)}<br />
+            <strong>CAC number:</strong> ${escapeHtml(cacNumber)}<br />
+            <strong>Sector:</strong> ${escapeHtml(sector)}
+          </p>
+          <p><a href="${escapeHtml(appUrl)}/admin/sender-ids" style="color: #16a34a;">Log in to review the request</a></p>
+          <p><a href="${escapeHtml(appUrl)}/api/admin/sender-id/${escapeHtml(senderIdId)}/cac-document" style="color: #16a34a;">Download the CAC document</a></p>
+        `),
+      })
+    )
+  );
 }

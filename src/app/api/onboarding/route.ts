@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { onboardingSchema, parseOrError } from "@/lib/validation";
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit";
 import { isUniqueConstraintViolation } from "@/lib/prismaErrors";
+import { notifyAdminNewSignup } from "@/lib/notifications";
 
 /**
  * POST /api/onboarding
@@ -98,6 +99,19 @@ export async function POST(req: NextRequest) {
       throw err;
     }
   }
+
+  // Best-effort — admin notification failing (e.g. Resend down, or
+  // ADMIN_NOTIFICATION_EMAILS unset) should never fail a signup that
+  // otherwise succeeded. notifyAdminNewSignup/sendEmail already swallow
+  // their own errors rather than throwing, so this is safe to await
+  // plainly.
+  await notifyAdminNewSignup({
+    businessName,
+    contactEmail: authUser.email,
+    contactPhone,
+    sector,
+    appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
+  });
 
   return NextResponse.json({ tenant, user }, { status: 201 });
 }
