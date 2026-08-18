@@ -1,4 +1,7 @@
-import { forwardRef } from "react";
+"use client";
+
+import { forwardRef, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const controlBase =
@@ -23,6 +26,42 @@ export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTML
   ({ className, ...props }, ref) => <input ref={ref} className={cn(controlBase, className)} {...props} />
 );
 Input.displayName = "Input";
+
+/**
+ * Drop-in replacement for `<Input type="password" />` with a show/hide
+ * eye toggle — same props, same ref forwarding, so every existing
+ * password field just swaps the component name and keeps everything
+ * else (value, onChange, required, autoComplete, id) unchanged.
+ *
+ * The toggle is `type="button"` specifically — inside a <form>, a
+ * plain <button> defaults to type="submit" and would submit the form
+ * every time someone clicks it to check their password.
+ */
+export const PasswordInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
+  ({ className, ...props }, ref) => {
+    const [visible, setVisible] = useState(false);
+    return (
+      <div className="relative">
+        <input
+          ref={ref}
+          type={visible ? "text" : "password"}
+          className={cn(controlBase, "pr-10", className)}
+          {...props}
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          aria-label={visible ? "Hide password" : "Show password"}
+          aria-pressed={visible}
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--color-ink-400)] hover:text-[var(--color-ink-600)]"
+        >
+          {visible ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
+        </button>
+      </div>
+    );
+  }
+);
+PasswordInput.displayName = "PasswordInput";
 
 export const Textarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
   ({ className, ...props }, ref) => <textarea ref={ref} className={cn(controlBase, "resize-y", className)} {...props} />

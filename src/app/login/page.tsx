@@ -5,34 +5,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { Field, Input } from "@/components/ui/Field";
+import { Field, Input, PasswordInput } from "@/components/ui/Field";
 import { Alert } from "@/components/ui/Alert";
-
-type WhoamiResponse = { role: string | null; onboarded: boolean };
-
-/**
- * Fetches /api/whoami with a short retry-on-401 loop.
- *
- * Right after supabase.auth.signInWithPassword() resolves on the client,
- * the auth cookie can take a brief moment to actually be written and
- * ready to send on the very next same-origin fetch. Calling /api/whoami
- * immediately can hit that window and get back {role: null, onboarded:
- * false} even for an already-onboarded user — which then incorrectly
- * routes them to /onboarding. Retrying a couple of times with a short
- * delay avoids trusting that first, possibly-too-early call.
- */
-async function fetchWhoamiWithRetry(maxAttempts = 3): Promise<WhoamiResponse> {
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const res = await fetch("/api/whoami", { cache: "no-store" });
-    if (res.status !== 401) {
-      return res.json();
-    }
-    if (attempt < maxAttempts - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 300));
-    }
-  }
-  return { role: null, onboarded: false };
-}
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -55,7 +29,8 @@ export default function LoginPage() {
 
     // Route based on role: admins go straight to /admin, clients go to
     // /onboarding if they haven't completed it yet, otherwise /dashboard.
-    const who = await fetchWhoamiWithRetry();
+    const res = await fetch("/api/whoami", { cache: "no-store" });
+    const who = await res.json();
     setLoading(false);
     if (who.role === "ADMIN") {
       router.push("/admin");
@@ -91,9 +66,8 @@ export default function LoginPage() {
             />
           </Field>
           <Field label="Password" htmlFor="password">
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { Field, Input } from "@/components/ui/Field";
+import { Field, PasswordInput } from "@/components/ui/Field";
 import { Alert } from "@/components/ui/Alert";
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -109,9 +109,8 @@ function ResetPasswordForm() {
           <form onSubmit={handleSubmit}>
             <div className="mt-6 space-y-4">
               <Field label="New password" htmlFor="password">
-                <Input
+                <PasswordInput
                   id="password"
-                  type="password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -120,9 +119,8 @@ function ResetPasswordForm() {
                 />
               </Field>
               <Field label="Confirm new password" htmlFor="confirmPassword">
-                <Input
+                <PasswordInput
                   id="confirmPassword"
-                  type="password"
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}

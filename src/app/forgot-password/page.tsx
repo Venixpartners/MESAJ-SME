@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { Field, Input } from "@/components/ui/Field";
+import { Field, Input, PasswordInput } from "@/components/ui/Field";
 import { Alert } from "@/components/ui/Alert";
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -131,9 +131,8 @@ export default function ForgotPasswordPage() {
                   />
                 </Field>
                 <Field label="New password" htmlFor="password">
-                  <Input
+                  <PasswordInput
                     id="password"
-                    type="password"
                     placeholder="********"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -142,9 +141,8 @@ export default function ForgotPasswordPage() {
                   />
                 </Field>
                 <Field label="Confirm new password" htmlFor="confirmPassword">
-                  <Input
+                  <PasswordInput
                     id="confirmPassword"
-                    type="password"
                     placeholder="********"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}

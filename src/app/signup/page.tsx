@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Field, Input, HelpText } from "@/components/ui/Field";
+import { Field, Input, PasswordInput, HelpText } from "@/components/ui/Field";
 import { Alert } from "@/components/ui/Alert";
 
 export default function SignupPage() {
@@ -20,31 +20,20 @@ export default function SignupPage() {
     setLoading(true);
     setError(null);
     const supabase = createClient();
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        // Without this, Supabase falls back to the project's Site URL —
+        // the marketing homepage, with no acknowledgment and no session
+        // established. See src/app/auth/confirmed/page.tsx for what
+        // actually happens once they land there.
         emailRedirectTo: `${window.location.origin}/auth/confirmed`,
       },
     });
     setLoading(false);
     if (error) {
       setError(error.message);
-      return;
-    }
-    // Supabase deliberately does NOT return an error when signUp is called
-    // with an email that's already registered and confirmed — that's
-    // intentional, to avoid letting a signup form be used to probe which
-    // emails exist on the site. Instead it silently no-ops: the response
-    // looks successful, but data.user.identities comes back as an empty
-    // array, which is the only signal that nothing actually happened.
-    // Without checking this, the person would see "Check your email!" for
-    // an account that already exists, with no email actually sent — a
-    // confusing dead end that also invites them to just try signing up
-    // again, which is how a mismatched auth identity got created during
-    // testing.
-    if (data.user && data.user.identities && data.user.identities.length === 0) {
-      setError("An account with this email already exists. Please sign in instead.");
       return;
     }
     setDone(true);
@@ -100,9 +89,8 @@ export default function SignupPage() {
           </Field>
           <div>
             <Field label="Password" htmlFor="password">
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
