@@ -26,7 +26,13 @@ full product/technical spec this code implements.
    Copy `.env.example` to `.env.local` and fill in:
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
      from your Supabase project settings
-   - `DATABASE_URL` — Supabase's Postgres connection string (Project Settings -> Database)
+   - `DATABASE_URL` — Supabase's **Transaction pooler** connection string
+     (Project Settings -> Database -> Connection string -> "Transaction"
+     tab), port 6543, `?pgbouncer=true`. Not the Session pooler (5432) —
+     this app runs as serverless functions, and Session mode's low
+     connection ceiling gets exhausted under concurrency
+     (`EMAXCONNSESSION`). See `.env.example` for the full explanation and
+     the matching `DIRECT_URL` (used only by migrations).
    - `MESAJ_API_TOKEN` — your Mesaj client Bearer token
    - `PAYSTACK_SECRET_KEY`, `PAYSTACK_PUBLIC_KEY` — from your Paystack dashboard
    - `RESEND_API_KEY` / `EMAIL_FROM` — for transactional email (Sender ID

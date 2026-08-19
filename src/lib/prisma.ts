@@ -29,8 +29,21 @@ function isLocalDatabase(url: string | undefined): boolean {
   }
 }
 
+// max: on Vercel each concurrent request can land on a separate serverless
+// instance, and each instance gets its OWN pg Pool — `pg`'s default max
+// (10) meant a handful of concurrent instances could open 30-40+ real
+// Postgres connections between them. Supabase's pooler (especially Session
+// Mode, pool_size 15 on smaller tiers) can't absorb that and starts
+// rejecting new clients with EMAXCONNSESSION.
+//
+// Capping max here to a small number means one instance holds only 1-2
+// slots; the pooler (must be Supabase's Transaction Mode pooler, port
+// 6543 — see .env.example) is what multiplexes across all the concurrent
+// instances, not this pool. Don't raise this without also confirming the
+// pooler mode/size can take it.
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL,
+  max: 1,
   ...(isLocalDatabase(process.env.DATABASE_URL) ? {} : { ssl: { rejectUnauthorized: false } }),
 });
 

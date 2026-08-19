@@ -25,7 +25,13 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: env("DATABASE_URL"),
+    // Migrations run DDL, not the high-concurrency short-lived queries the
+    // Transaction pooler is for — and PgBouncer transaction mode can
+    // interfere with some DDL. So the CLI (migrate deploy, etc.) connects
+    // directly, bypassing the pooler entirely. Falls back to DATABASE_URL
+    // when DIRECT_URL isn't set (local dev, where DATABASE_URL is usually
+    // already a direct/unpooled connection).
+    url: process.env.DIRECT_URL ?? env("DATABASE_URL"),
     shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
   },
 });
