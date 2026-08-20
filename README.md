@@ -34,6 +34,13 @@ full product/technical spec this code implements.
      (`EMAXCONNSESSION`). See `.env.example` for the full explanation and
      the matching `DIRECT_URL` (used only by migrations).
    - `MESAJ_API_TOKEN` — your Mesaj client Bearer token
+   - `MESAJ_WELCOME_SENDER_ID` — Mesaj SME's own carrier-approved shortCode,
+     used to send a one-time welcome SMS after onboarding (see
+     `src/lib/notifications.ts`). Used for AIRTEL/GLO/MOBILE9, and as the
+     MTN fallback if `MESAJ_WELCOME_SENDER_ID_MTN` isn't set.
+   - `MESAJ_WELCOME_SENDER_ID_MTN` — optional MTN-specific override, since
+     MTN approved a different shortCode string ("MESAJS") than the other
+     carriers ("MESAJ")
    - `PAYSTACK_SECRET_KEY`, `PAYSTACK_PUBLIC_KEY` — from your Paystack dashboard
    - `RESEND_API_KEY` / `EMAIL_FROM` — for transactional email (Sender ID
      status changes, campaign rejection reasons — sent automatically from

@@ -97,7 +97,22 @@ export default function OnboardingPage() {
             />
           </Field>
           <Field label="Contact phone" htmlFor="contactPhone">
-            <Input id="contactPhone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} required />
+            <Input
+              id="contactPhone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={contactPhone}
+              // Allow digits, +, spaces, and dashes as the user types (matches
+              // what normalizeNumber() accepts server-side: 08031234567,
+              // +2348031234567, 2348031234567, or 8031234567) — strip
+              // anything else (letters, symbols) rather than reject the
+              // whole keystroke, so pasting a number with odd formatting
+              // still lands cleanly instead of being blocked outright.
+              onChange={(e) => setContactPhone(e.target.value.replace(/[^\d+\s-]/g, ""))}
+              placeholder="e.g. 08031234567"
+              required
+            />
           </Field>
         </FieldGroup>
 

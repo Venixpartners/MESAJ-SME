@@ -39,6 +39,16 @@ const REQUIRED_VARS: EnvVar[] = [
 const RECOMMENDED_VARS: EnvVar[] = [
   { name: "MESAJ_API_TOKEN", usedFor: "Mesaj bulk SMS API bearer token (sending will fail)" },
   {
+    name: "MESAJ_WELCOME_SENDER_ID",
+    usedFor:
+      "Mesaj SME's own carrier-approved shortCode (NOT a client's) used to send the welcome SMS after onboarding, for AIRTEL/GLO/MOBILE9 and as the fallback for MTN if MESAJ_WELCOME_SENDER_ID_MTN isn't set — without it, welcome SMS is skipped silently",
+  },
+  {
+    name: "MESAJ_WELCOME_SENDER_ID_MTN",
+    usedFor:
+      "MTN-specific override for the welcome SMS shortCode, since MTN can approve a different exact string than the other carriers (confirmed: MESAJS vs MESAJ) — optional, falls back to MESAJ_WELCOME_SENDER_ID if unset",
+  },
+  {
     name: "MESAJ_WEBHOOK_SECRET",
     usedFor:
       "shared secret to verify inbound Mesaj delivery-report webhooks (see README — confirm the exact header/scheme with Mesaj; without this set, webhook auth is skipped entirely, which is NOT safe for production)",

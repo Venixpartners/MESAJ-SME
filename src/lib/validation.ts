@@ -14,11 +14,31 @@
 
 import { z } from "zod";
 import { MAX_CONTACT_LIST_NAME_CHARS, MAX_MESSAGE_CHARS } from "./limits";
+import { normalizeNumber } from "./numbers";
 
 export const businessNameSchema = z.string().trim().min(1, "Business name is required").max(200);
 export const cacNumberSchema = z.string().trim().min(1, "CAC number is required").max(32);
 export const sectorSchema = z.string().trim().min(1, "Sector is required").max(100);
-export const contactPhoneSchema = z.string().trim().min(1, "Contact phone is required").max(20);
+// Previously only checked non-empty + max length — accepted any string,
+// including non-numeric text. That let garbage into Tenant.contactPhone,
+// which is a real problem now that it's also used to send a welcome SMS
+// right after onboarding (see lib/notifications.ts sendWelcomeSms) — a
+// bad number there would just fail silently at send time instead of being
+// caught here, where the person can actually correct it.
+//
+// Reuses normalizeNumber() — the same Nigerian-number validation every
+// other phone number in this app goes through (campaign recipients,
+// contact lists) — so this accepts the same range of input formats
+// (leading 0, +234, 234, or bare 10-digit) rather than inventing a
+// second, possibly-inconsistent phone rule.
+export const contactPhoneSchema = z
+  .string()
+  .trim()
+  .min(1, "Contact phone is required")
+  .max(20)
+  .refine((value) => normalizeNumber(value).valid, {
+    message: "Enter a valid Nigerian phone number (e.g. 08031234567)",
+  });
 
 // Carrier-approved Sender IDs are conventionally capped at 11 alphanumeric
 // characters by the telcos themselves — this isn't just a generous sanity

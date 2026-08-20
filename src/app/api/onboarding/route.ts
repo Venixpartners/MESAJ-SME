@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { onboardingSchema, parseOrError } from "@/lib/validation";
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit";
 import { isUniqueConstraintViolation } from "@/lib/prismaErrors";
-import { notifyAdminNewSignup } from "@/lib/notifications";
+import { notifyAdminNewSignup, sendWelcomeSms } from "@/lib/notifications";
 
 /**
  * POST /api/onboarding
@@ -112,6 +112,12 @@ export async function POST(req: NextRequest) {
     sector,
     appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
   });
+
+  // Best-effort, same reasoning as the admin email above — a signup that
+  // already succeeded must never fail because the welcome SMS didn't send.
+  // sendWelcomeSms swallows its own errors and reports to Sentry, so this
+  // is safe to await plainly.
+  await sendWelcomeSms({ contactPhone, businessName });
 
   return NextResponse.json({ tenant, user }, { status: 201 });
 }

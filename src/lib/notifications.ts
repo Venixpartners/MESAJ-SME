@@ -1,21 +1,22 @@
 /**
  * Client-facing transactional notifications.
  *
- * Two triggers wired up here (see README "Still to build" — this is what
- * closes that gap): Sender ID per-carrier status changes, and campaign
+ * Email triggers: Sender ID per-carrier status changes, and campaign
  * rejection reasons. Both are things a client currently has to notice by
  * checking their dashboard; this emails them the moment it happens instead.
  *
- * Deliberately NOT SMS notifications despite the README wording ("email/SMS
- * notifications") — sending SMS would mean using Mesaj's own paid API to
- * notify clients about their Mesaj SME usage, which needs a shortCode/
- * sender identity of our own approved with each carrier first. Email covers
- * the same need without that dependency; SMS can be layered on later using
- * the same call sites if that's still wanted.
+ * SMS trigger: a welcome SMS sent once, right after onboarding completes
+ * (see sendWelcomeSms below and /api/onboarding). This uses Mesaj SME's own
+ * carrier-approved shortCode (MESAJ_WELCOME_SENDER_ID) — a client's own
+ * Sender ID doesn't exist yet at this point in the flow, so this can't
+ * reuse the per-tenant sending path campaigns use.
  */
 
 import { sendEmail } from "./email";
+import { sendCarrierBatch } from "./mesajClient";
+import { normalizeNumber } from "./numbers";
 import type { Carrier, SenderIdStatus } from "@prisma/client";
+import * as Sentry from "@sentry/nextjs";
 
 const APP_NAME = "Mesaj SME";
 
@@ -272,4 +273,86 @@ export async function notifyAdminNewSenderIdRequest(params: {
       })
     )
   );
+}
+
+/**
+ * Mesaj SME's OWN carrier-approved shortCodes (not a client's) — like
+ * client Sender IDs, each carrier can approve a different exact string
+ * for the same brand (see SenderIdCarrierStatus in schema.prisma: "MTN/
+ * Airtel/Glo/9mobile approve independently and may assign slightly
+ * different shortCode strings"). Confirmed in practice: MTN approved
+ * "MESAJS", the other three approved "MESAJ".
+ *
+ * MESAJ_WELCOME_SENDER_ID_MTN is optional — if unset, falls back to
+ * MESAJ_WELCOME_SENDER_ID (the common one) so a single-shortCode setup
+ * still works during initial rollout; set the MTN-specific one once
+ * that approval is in hand, since sending to MTN with the wrong
+ * shortCode will simply be rejected by MTN.
+ */
+function shortCodeForCarrier(carrier: Carrier): string | undefined {
+  if (carrier === "MTN") {
+    return process.env.MESAJ_WELCOME_SENDER_ID_MTN ?? process.env.MESAJ_WELCOME_SENDER_ID;
+  }
+  return process.env.MESAJ_WELCOME_SENDER_ID;
+}
+
+/**
+ * Sent once, right after a client completes onboarding (see
+ * /api/onboarding). Uses Mesaj SME's OWN carrier-approved shortCode
+ * (NOT the client's — the client's Sender ID doesn't exist yet at this
+ * point in the flow, that's a separate request they submit afterward),
+ * picked per-carrier via shortCodeForCarrier above since MTN's approved
+ * shortCode differs from the other three carriers'.
+ *
+ * Best-effort like every other notification here: a failure must never
+ * fail onboarding, which already succeeded by the time this is called.
+ * Swallows its own errors (network failure, missing config, invalid phone
+ * number, Mesaj API error) and reports to Sentry instead of throwing.
+ */
+export async function sendWelcomeSms(params: {
+  contactPhone: string;
+  businessName: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const { contactPhone, businessName } = params;
+
+  try {
+    const { normalized, carrier, valid, reason } = normalizeNumber(contactPhone);
+    if (!valid || !normalized || !carrier) {
+      const error = `Invalid contactPhone for welcome SMS: ${reason ?? "unknown"}`;
+      Sentry.captureMessage("Welcome SMS skipped — invalid phone number", {
+        level: "warning",
+        extra: { businessName, reason },
+      });
+      return { success: false, error };
+    }
+
+    const shortCode = shortCodeForCarrier(carrier);
+    if (!shortCode) {
+      // Not treated as an error — env.ts already warns at boot if the
+      // common var is unset, so this would be a duplicate signal for
+      // that case. Just skip quietly.
+      return { success: false, error: `No welcome-SMS shortCode configured for carrier ${carrier}` };
+    }
+
+    const message = `Welcome to ${APP_NAME}, your No.1 bulk SMS service! Your account is ready — log in to request your Sender ID and start sending. Need help? support@mail.mesaj.cloud`;
+
+    const result = await sendCarrierBatch({ message, shortCode, recipients: [normalized] });
+    if (!result.success) {
+      Sentry.captureMessage("Welcome SMS failed to send", {
+        level: "error",
+        extra: { businessName, carrier, shortCode, error: result.error },
+      });
+      return { success: false, error: result.error };
+    }
+
+    return { success: true };
+  } catch (err) {
+    const error = err instanceof Error ? err.message : "Unknown error sending welcome SMS";
+    console.error(`[welcome-sms] ${error}`);
+    Sentry.captureMessage("Welcome SMS failed to send", {
+      level: "error",
+      extra: { businessName, error },
+    });
+    return { success: false, error };
+  }
 }
