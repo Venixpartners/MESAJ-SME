@@ -15,6 +15,18 @@ vi.mock("@/lib/rateLimit", () => ({
   rateLimitResponse: vi.fn(() => new Response(JSON.stringify({ error: "rate limited" }), { status: 429 })),
   RATE_LIMITS: { ONBOARDING: { limit: 5, windowMs: 60_000 } },
 }));
+// notifyAdminNewSignup's underlying sendEmail() already no-ops instantly
+// when RESEND_API_KEY/EMAIL_FROM aren't set, so it never needed mocking.
+// sendWelcomeSms doesn't have that same short-circuit — it calls
+// mesajClient's sendCarrierBatch, which (if MESAJ_API_TOKEN happens to be
+// set in this environment) can hit a real network call and retry with real
+// exponential backoff, adding real seconds and flaking/timing out these
+// tests. Mock the whole module so onboarding tests stay fast and hermetic,
+// same as prisma/supabase/rateLimit above.
+vi.mock("@/lib/notifications", () => ({
+  notifyAdminNewSignup: vi.fn().mockResolvedValue(undefined),
+  sendWelcomeSms: vi.fn().mockResolvedValue({ success: true }),
+}));
 
 import { POST } from "./route";
 import { prisma } from "@/lib/prisma";
@@ -190,5 +202,16 @@ describe("POST /api/onboarding — success path (no existing User row — the co
     expect(res.status).toBe(201);
     expect(json.tenant.id).toBe("tenant-1");
     expect(json.user.tenantId).toBe("tenant-1");
+  });
+
+  it("fires the welcome SMS with the submitted contact phone and business name", async () => {
+    const { sendWelcomeSms } = await import("@/lib/notifications");
+
+    await callRoute(VALID_BODY);
+
+    expect(sendWelcomeSms).toHaveBeenCalledWith({
+      contactPhone: VALID_BODY.contactPhone,
+      businessName: VALID_BODY.businessName,
+    });
   });
 });
