@@ -19,4 +19,22 @@
 -- the original RLS migration avoids it: that would apply RLS even to the
 -- table owner, which is the role Prisma migrates as, and would break
 -- migrations.
-ALTER TABLE "public"."_prisma_migrations" ENABLE ROW LEVEL SECURITY;
+-- Guarded with a table-existence check: on the real database this
+-- migration is meant for, _prisma_migrations obviously already exists
+-- (migrations have been running there). But CI's migration-check job
+-- replays every migration from scratch against a throwaway shadow
+-- database via `prisma migrate diff`, which applies these migration.sql
+-- files as raw SQL without going through Prisma's normal bookkeeping that
+-- creates _prisma_migrations first — so an unconditional ALTER TABLE here
+-- fails there with "relation does not exist" even though it's correct
+-- against the real target. This DO block makes it a no-op in that
+-- shadow-DB context while still applying for real everywhere the table
+-- actually exists.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = '_prisma_migrations'
+  ) THEN
+    EXECUTE 'ALTER TABLE "public"."_prisma_migrations" ENABLE ROW LEVEL SECURITY';
+  END IF;
+END $$;
