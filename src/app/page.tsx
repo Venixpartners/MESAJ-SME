@@ -13,7 +13,18 @@ import { buttonClassName } from "@/components/ui/Button";
 import { BrandHomeLink } from "@/components/Brand";
 import { Footer } from "@/components/Footer";
 import { CostCalculator } from "@/components/marketing/CostCalculator";
+import { SignupLink } from "@/components/marketing/SignupLink";
 import { PRICE_PER_SMS } from "@/lib/pricing";
+import {
+  INSTAGRAM_URL,
+  LEGAL_ENTITY,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_URL,
+  SUPPORT_EMAIL,
+  WHATSAPP_DISPLAY,
+  WHATSAPP_URL,
+} from "@/lib/site";
 
 /**
  * Public landing page. Every claim here has to be traceable to something
@@ -108,13 +119,64 @@ const FAQS = [
   },
   {
     q: "Who do I talk to when something goes wrong?",
-    a: "Email support@mail.mesaj.cloud and a person in Lagos answers. Mesaj is a Venix Partners Limited company, so you are dealing with a registered Nigerian business, not a reseller in another time zone.",
+    a: `Message us on WhatsApp at ${WHATSAPP_DISPLAY} or email ${SUPPORT_EMAIL}, and a person in Lagos answers. Mesaj is a ${LEGAL_ENTITY} company, so you are dealing with a registered Nigerian business, not a reseller in another time zone.`,
   },
 ];
+
+/**
+ * Structured data. Built from the same arrays the page renders, so the
+ * answers Google shows can never say something different from the answers
+ * on screen.
+ */
+function structuredData() {
+  const organisation = {
+    "@type": "Organization",
+    "@id": `${SITE_URL}/#organisation`,
+    name: SITE_NAME,
+    legalName: LEGAL_ENTITY,
+    url: SITE_URL,
+    description: SITE_DESCRIPTION,
+    email: SUPPORT_EMAIL,
+    telephone: WHATSAPP_DISPLAY,
+    areaServed: "NG",
+    address: { "@type": "PostalAddress", addressCountry: "NG", addressLocality: "Lagos" },
+    sameAs: [INSTAGRAM_URL],
+  };
+
+  const service = {
+    "@type": "Service",
+    name: SITE_NAME,
+    serviceType: "Bulk SMS",
+    provider: { "@id": `${SITE_URL}/#organisation` },
+    areaServed: "NG",
+    offers: {
+      "@type": "Offer",
+      price: PRICE_PER_SMS,
+      priceCurrency: "NGN",
+      description: `${PRICE_PER_SMS} Naira per message delivered to a customer`,
+      url: `${SITE_URL}/signup`,
+    },
+  };
+
+  const faq = {
+    "@type": "FAQPage",
+    mainEntity: FAQS.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: { "@type": "Answer", text: item.a },
+    })),
+  };
+
+  return { "@context": "https://schema.org", "@graph": [organisation, service, faq] };
+}
 
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-canvas)]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData()) }}
+      />
       <header className="sticky top-0 z-30 border-b border-[var(--color-border)] bg-[var(--color-surface)]/95 backdrop-blur">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-3.5">
           <BrandHomeLink />
@@ -125,9 +187,9 @@ export default function Home() {
             >
               Sign in
             </Link>
-            <Link href="/signup" className={buttonClassName({ variant: "admin", className: "min-h-11" })}>
+            <SignupLink className={buttonClassName({ variant: "admin", className: "min-h-11" })}>
               Get started
-            </Link>
+            </SignupLink>
           </nav>
         </div>
       </header>
@@ -146,12 +208,9 @@ export default function Home() {
                 wallet, upload your numbers and send from your browser. No developer and no contract.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Link
-                  href="/signup"
-                  className={buttonClassName({ variant: "admin", className: "min-h-12 gap-1.5 px-6 text-base" })}
-                >
+                <SignupLink className={buttonClassName({ variant: "admin", className: "min-h-12 gap-1.5 px-6 text-base" })}>
                   Create your free account <ArrowRight className="size-4" aria-hidden />
-                </Link>
+                </SignupLink>
                 <a href="#pricing" className={buttonClassName({ variant: "secondary", className: "min-h-12 px-6 text-base" })}>
                   See what a campaign costs
                 </a>
@@ -185,7 +244,7 @@ export default function Home() {
             {[
               { k: "4 networks", v: "MTN, Airtel, Glo and 9mobile from one dashboard" },
               { k: `\u20a6${PRICE_PER_SMS} flat`, v: "Per customer reached, priced in Naira" },
-              { k: "Lagos support", v: "A Venix Partners Limited company" },
+              { k: "Lagos support", v: `A ${LEGAL_ENTITY} company` },
             ].map((item) => (
               <div key={item.k} className="bg-[var(--color-surface)] p-5">
                 <dt className="text-lg font-semibold tracking-tight text-[var(--color-ink-900)]">{item.k}</dt>
@@ -305,20 +364,24 @@ export default function Home() {
               Open an account today, send your first campaign as soon as your Sender ID clears.
             </p>
             <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link
-                href="/signup"
+              <SignupLink
                 className={buttonClassName({ variant: "admin", className: "min-h-12 w-full gap-1.5 px-6 text-base sm:w-auto" })}
               >
                 Create your free account <ArrowRight className="size-4" aria-hidden />
-              </Link>
+              </SignupLink>
               <a
-                href="mailto:support@mail.mesaj.cloud"
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-white/25 px-6 text-base font-medium text-white transition-colors hover:bg-white/10"
               >
                 <MessageSquareText className="size-4" aria-hidden />
-                Talk to us first
+                Ask a question on WhatsApp
               </a>
             </div>
+            <p className="mt-6 text-sm text-white/60">
+              WhatsApp {WHATSAPP_DISPLAY} or email {SUPPORT_EMAIL}
+            </p>
             <p className="mt-8 text-sm text-white/50">Powering the Nigerian Pulse</p>
           </div>
         </section>
@@ -329,12 +392,9 @@ export default function Home() {
       {/* Sticky action bar, phones only. Sits above the footer so the last
           thing on a small screen is always a way to start. */}
       <div className="sticky bottom-0 z-30 border-t border-[var(--color-border)] bg-[var(--color-surface)]/95 p-3 backdrop-blur sm:hidden">
-        <Link
-          href="/signup"
-          className={buttonClassName({ variant: "admin", className: "min-h-12 w-full gap-1.5 text-base" })}
-        >
+        <SignupLink className={buttonClassName({ variant: "admin", className: "min-h-12 w-full gap-1.5 text-base" })}>
           Create your free account <ArrowRight className="size-4" aria-hidden />
-        </Link>
+        </SignupLink>
       </div>
     </div>
   );
