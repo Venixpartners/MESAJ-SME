@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, PasswordInput } from "@/components/ui/Field";
 import { Alert } from "@/components/ui/Alert";
+import { BrandHomeLink } from "@/components/Brand";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -79,9 +80,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--color-canvas)] px-6">
       <div className="w-full max-w-sm rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-7 shadow-[var(--shadow-md)]">
-        <Link href="/" className="text-sm font-semibold tracking-tight text-[var(--color-ink-900)]">
-          Mesaj <span className="text-[var(--color-brand-600)]">SME</span>
-        </Link>
+        <BrandHomeLink />
         <h1 className="mt-4 text-xl font-semibold text-[var(--color-ink-900)]">Reset your password</h1>
 
         {step === "email" && (

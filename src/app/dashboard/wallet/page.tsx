@@ -68,7 +68,7 @@ export default async function WalletPage({
                   <TD>{t.type}</TD>
                   <TD
                     className={
-                      "font-mono tabular-nums " + (t.type === "SPEND" ? "text-[var(--color-red-600)]" : "text-[var(--color-brand-600)]")
+                      "font-mono tabular-nums " + (t.type === "SPEND" ? "text-[var(--color-red-600)]" : "text-[var(--color-success-700)]")
                     }
                   >
                     {t.type === "SPEND" ? "-" : "+"}₦{Math.abs(t.amount).toLocaleString()}
