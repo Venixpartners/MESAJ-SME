@@ -75,7 +75,7 @@ export default function UserRoleManager({
                 {u.email}
                 {isSelf && <span className="ml-2 text-xs font-normal text-[var(--color-ink-400)]">(you)</span>}
               </TD>
-              <TD>{u.businessName ?? <span className="text-[var(--color-ink-400)]">—</span>}</TD>
+              <TD>{u.businessName ?? <span className="text-[var(--color-ink-400)]">Not set</span>}</TD>
               <TD>
                 <Badge tone={u.role === "ADMIN" ? "info" : "neutral"}>{u.role}</Badge>
               </TD>

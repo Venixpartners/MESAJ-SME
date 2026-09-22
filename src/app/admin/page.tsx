@@ -27,7 +27,7 @@ const SECTIONS = [
   {
     href: "/admin/sender-ids",
     title: "Sender ID management",
-    description: "Update per-telco approval status and record approved shortCodes.",
+    description: "Update approval status for each network and record approved shortCodes.",
     icon: BadgeCheck,
   },
   {

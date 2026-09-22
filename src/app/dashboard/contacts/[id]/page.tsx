@@ -83,7 +83,7 @@ export default async function ContactListDetailPage({ params }: { params: Promis
             {contactList.contacts.map((c) => (
               <TR key={c.id}>
                 <TD className="font-mono">{c.phoneNumber}</TD>
-                <TD>{c.carrier ?? "—"}</TD>
+                <TD>{c.carrier ?? "Unknown"}</TD>
               </TR>
             ))}
           </tbody>

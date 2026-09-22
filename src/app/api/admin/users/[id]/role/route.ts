@@ -44,7 +44,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if (targetUserId === admin.id) {
     return NextResponse.json(
-      { error: "You can't change your own role — have another admin do it if this is intentional." },
+      { error: "You can't change your own role. Ask another admin to do it." },
       { status: 400 }
     );
   }
@@ -58,7 +58,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const adminCount = await prisma.user.count({ where: { role: "ADMIN" } });
     if (adminCount <= 1) {
       return NextResponse.json(
-        { error: "Can't demote the last remaining admin — promote someone else first." },
+        { error: "You can't demote the last remaining admin. Promote someone else first." },
         { status: 409 }
       );
     }

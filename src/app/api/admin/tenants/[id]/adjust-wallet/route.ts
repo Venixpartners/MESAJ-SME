@@ -29,7 +29,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { amount, note } = await req.json();
 
   if (typeof amount !== "number" || amount === 0) {
-    return NextResponse.json({ error: "amount must be a non-zero number" }, { status: 400 });
+    return NextResponse.json({ error: "Amount must be a number other than zero" }, { status: 400 });
   }
 
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
