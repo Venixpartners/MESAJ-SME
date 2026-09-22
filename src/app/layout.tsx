@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import { ToastProvider } from "@/components/ui/Toast";
+import { MetaPixel } from "@/components/MetaPixel";
 import "./globals.css";
 
 // Inter is the brand's digital typeface. next/font downloads it at build
@@ -36,6 +37,7 @@ export default function RootLayout({
       className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <MetaPixel />
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
