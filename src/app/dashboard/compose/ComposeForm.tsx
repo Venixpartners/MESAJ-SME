@@ -5,6 +5,7 @@ import { Bookmark, CheckCircle2, Repeat2, Upload, XCircle } from "lucide-react";
 import { getSegmentInfo } from "@/lib/smsSegments";
 import { parseNumbersFromCsv } from "@/lib/numbers";
 import { MAX_RECIPIENTS_PER_CAMPAIGN, MAX_REQUEST_BODY_BYTES, MAX_MESSAGE_CHARS } from "@/lib/limits";
+import { PRICE_PER_SMS } from "@/lib/pricing";
 import type { ComplianceFailure } from "@/lib/campaignCompliance";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
@@ -38,7 +39,7 @@ interface ValidationSummary {
 }
 
 function truncate(text: string, max: number): string {
-  return text.length > max ? `${text.slice(0, max)}…` : text;
+  return text.length > max ? `${text.slice(0, max)}\u2026` : text;
 }
 
 export default function ComposeForm({
@@ -171,6 +172,7 @@ export default function ComposeForm({
   useEffect(() => {
     if (!prefillContactListId) return;
     Promise.resolve().then(() => loadContactList(prefillContactListId));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefillContactListId]);
 
   async function handleSaveList() {
@@ -316,7 +318,7 @@ export default function ComposeForm({
                 value={message}
                 onChange={(e) => setMessage(e.target.value.slice(0, MAX_MESSAGE_CHARS))}
                 rows={3}
-                placeholder="Your promotional message…"
+                placeholder="Your promotional message\u2026"
               />
             </Field>
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -324,7 +326,7 @@ export default function ComposeForm({
                 <div className="w-48">
                   <Select aria-label="Insert saved message" defaultValue="" onChange={handleLoadSavedMessage}>
                     <option value="" disabled>
-                      Insert saved message…
+                      Insert saved message\u2026
                     </option>
                     {savedMessages.map((m) => (
                       <option key={m.id} value={m.id}>
@@ -353,14 +355,21 @@ export default function ComposeForm({
                 segmentSize={segmentInfo.encoding === "UCS2" ? 70 : 160}
               />
               <p className="text-xs text-[var(--color-ink-500)]">
-                {segmentInfo.charsRemainingInSegment} left in segment {Math.max(segmentInfo.segments, 1)} ·{" "}
-                {segmentInfo.segments <= 1 ? "1 segment" : `${segmentInfo.segments} segments (billed per segment)`}
+                {segmentInfo.charsRemainingInSegment} left in part {Math.max(segmentInfo.segments, 1)} ·{" "}
+                {segmentInfo.segments <= 1 ? "1 part" : `${segmentInfo.segments} parts`} · ₦{PRICE_PER_SMS} per
+                recipient
               </p>
             </div>
+            {segmentInfo.segments > 1 && (
+              <p className="mt-1 text-xs text-[var(--color-ink-500)]">
+                A longer message is still {`\u20a6${PRICE_PER_SMS}`} per recipient. The parts arrive as one message on
+                the phone.
+              </p>
+            )}
             {segmentInfo.encoding === "UCS2" && (
               <p className="mt-1 text-xs text-[var(--color-amber-700)]">
                 Message contains characters outside the standard SMS alphabet (e.g. emoji, accents, curly
-                quotes), which drops the segment limit to 70 characters.
+                quotes), which drops each part to 70 characters.
               </p>
             )}
           </div>
@@ -392,7 +401,7 @@ export default function ComposeForm({
                     disabled={loadingListId !== null}
                   >
                     <option value="" disabled>
-                      {loadingListId ? "Loading…" : "Insert saved list…"}
+                      {loadingListId ? "Loading\u2026" : "Insert saved list\u2026"}
                     </option>
                     {contactLists.map((l) => (
                       <option key={l.id} value={l.id}>
@@ -466,7 +475,7 @@ export default function ComposeForm({
           {result && <Alert tone="success">{result}</Alert>}
 
           <Button onClick={handleReview} loading={checking} disabled={!message || !senderId}>
-            {checking ? "Checking numbers…" : "Review & continue"}
+            {checking ? "Checking numbers\u2026" : "Review & continue"}
           </Button>
         </div>
       </Card>
@@ -508,7 +517,7 @@ export default function ComposeForm({
           </p>
           <div className="mt-3 flex gap-3">
             <Button variant="admin" onClick={handleAgreeAndSend} loading={submitting} disabled={validation.totalValid === 0}>
-              {submitting ? "Submitting…" : "Agree & submit for approval"}
+              {submitting ? "Submitting\u2026" : "Agree & submit for approval"}
             </Button>
             <Button variant="secondary" onClick={() => setValidation(null)}>
               Cancel
