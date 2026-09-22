@@ -276,7 +276,7 @@ export default function ComposeForm({
       // are genuinely different outcomes and shouldn't share one message.
       setResult(
         data.autoApproved
-          ? "Campaign approved and sending now — no review needed."
+          ? "Campaign approved. It is sending now and needed no review."
           : "Campaign submitted for approval. You'll be notified once it's reviewed."
       );
       setValidation(null);
