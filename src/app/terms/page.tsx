@@ -9,7 +9,7 @@ export default function TermsPage() {
       <LegalPageHeader />
       <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
         <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-ink-900)]">Terms of Service</h1>
-        <p className="mt-2 text-sm text-[var(--color-ink-500)]">Last updated: August 2026</p>
+        <p className="mt-2 text-sm text-[var(--color-ink-500)]">Last updated: September 2026</p>
 
         <div className="prose-legal mt-8 space-y-8 text-[15px] leading-relaxed text-[var(--color-ink-700)]">
           <section>
@@ -90,6 +90,17 @@ export default function TermsPage() {
             <p className="mt-2">
               Wallet funds have no cash value outside the Service and are non-transferable between accounts.
             </p>
+            <p className="mt-2">
+              <strong>Top ups are not refundable.</strong> Money you add to your wallet buys message credit and
+              stays in your wallet. We do not pay it back to your card, your bank account, or anyone else,
+              whether you spend it or not. This applies on account closure too.
+            </p>
+            <p className="mt-2">
+              Where these terms say an amount is refunded, that always means it is credited back to your Mesaj
+              wallet for future sends. It is never paid out to you in cash. Once a campaign has been submitted
+              and the messages have been handed to the carriers, that spend is final: we cannot recall a
+              message that has already gone out, and we cannot reverse the charge for it.
+            </p>
           </section>
 
           <section>
@@ -97,8 +108,8 @@ export default function TermsPage() {
             <p className="mt-2">
               We may suspend or terminate your account for violating these terms, sending prohibited content,
               providing false business information, or fraudulent payment activity. You may stop using the
-              Service at any time; unused wallet balance handling on account closure will be addressed on a
-              case-by-case basis. Contact us if you close your account with a remaining balance.
+              Service at any time. As set out in section 5, any unused wallet balance is not refundable to cash
+              when you close your account.
             </p>
           </section>
 
