@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { BrandLockup } from "@/components/Brand";
+import { INSTAGRAM_URL, LEGAL_ENTITY, SUPPORT_EMAIL, WHATSAPP_URL } from "@/lib/site";
 
 /**
  * Deliberately minimal. Every link below is one a visitor could plausibly
  * want. Mesaj is a trading name; Venix Partners Limited is the legal
  * entity, and the footer must always say so.
  */
-const INSTAGRAM_URL = "https://www.instagram.com/mesajsms";
-
 export function Footer() {
   return (
     <footer className="border-t border-[var(--color-border)] bg-[var(--color-surface)]">
@@ -26,8 +25,16 @@ export function Footer() {
           <Link href="/privacy" className="py-2 hover:text-[var(--color-ink-900)]">
             Privacy
           </Link>
-          <a href="mailto:support@mail.mesaj.cloud" className="py-2 hover:text-[var(--color-ink-900)]">
-            Contact
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="py-2 hover:text-[var(--color-ink-900)]">
+            Email
+          </a>
+          <a
+            href={WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-2 hover:text-[var(--color-ink-900)]"
+          >
+            WhatsApp
           </a>
           <a
             href={INSTAGRAM_URL}
@@ -41,8 +48,8 @@ export function Footer() {
         </nav>
 
         <div className="text-center text-xs leading-relaxed text-[var(--color-ink-400)] sm:text-right">
-          <p>Mesaj is a Venix Partners Limited company.</p>
-          <p>© {new Date().getFullYear()} Venix Partners Limited. All rights reserved.</p>
+          <p>Mesaj is a {LEGAL_ENTITY} company.</p>
+          <p>© {new Date().getFullYear()} {LEGAL_ENTITY}. All rights reserved.</p>
         </div>
       </div>
     </footer>
