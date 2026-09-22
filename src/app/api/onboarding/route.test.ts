@@ -44,10 +44,12 @@ function mockAuthedUser(email = "biz@example.test") {
   } as any);
 }
 
-function callRoute(body: unknown) {
+function callRoute(body: unknown, cookie?: string) {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (cookie) headers["Cookie"] = cookie;
   const req = new NextRequest("https://example.test/api/onboarding", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(body),
   });
   return POST(req);
@@ -213,5 +215,51 @@ describe("POST /api/onboarding — success path (no existing User row — the co
       contactPhone: VALID_BODY.contactPhone,
       businessName: VALID_BODY.businessName,
     });
+  });
+});
+
+describe("POST /api/onboarding — signup attribution", () => {
+  it("records the campaign the signup came from, read off the cookie", async () => {
+    const parked = encodeURIComponent(
+      JSON.stringify({ utmSource: "facebook", utmCampaign: "lagos_smes", adClickId: "FB123" })
+    );
+
+    await callRoute(VALID_BODY, `mesaj_attribution=${parked}`);
+
+    expect(mockedPrisma.tenant.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          utmSource: "facebook",
+          utmCampaign: "lagos_smes",
+          adClickId: "FB123",
+        }),
+      })
+    );
+  });
+
+  it("onboards normally when there is no cookie, leaving the source unknown", async () => {
+    const res = await callRoute(VALID_BODY);
+
+    expect(res.status).toBe(201);
+    const createArgs = mockedPrisma.tenant.create.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(createArgs.data.utmSource).toBeUndefined();
+    expect(createArgs.data.businessName).toBe(VALID_BODY.businessName);
+  });
+
+  it("ignores a tampered cookie rather than failing the signup", async () => {
+    const hostile = encodeURIComponent(JSON.stringify({ utmSource: "facebook", walletBalance: 999999 }));
+
+    const res = await callRoute(VALID_BODY, `mesaj_attribution=${hostile}`);
+
+    expect(res.status).toBe(201);
+    const createArgs = mockedPrisma.tenant.create.mock.calls[0][0] as { data: Record<string, unknown> };
+    expect(createArgs.data.utmSource).toBe("facebook");
+    expect(createArgs.data.walletBalance).toBeUndefined();
+  });
+
+  it("does not fall over on a cookie that is not JSON at all", async () => {
+    const res = await callRoute(VALID_BODY, "mesaj_attribution=not-json-at-all");
+
+    expect(res.status).toBe(201);
   });
 });

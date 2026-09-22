@@ -79,6 +79,12 @@ export default function PrivacyPage() {
               reaching the businesses it is meant for.
             </p>
             <p className="mt-2">
+              We also keep one cookie of our own on those same public pages, for up to 30 days. If you arrive
+              from an advert it records which campaign sent you, so that when you open an account we know which
+              advert paid for it. It holds campaign labels and an advert click reference, nothing about you
+              personally, and it stays on our own systems.
+            </p>
+            <p className="mt-2">
               The pixel does not run anywhere inside your account. It is switched off across the dashboard and the
               admin area, so nothing about your campaigns, your contact lists, your wallet or your customers&apos;
               phone numbers is sent to Meta.
