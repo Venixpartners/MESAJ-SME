@@ -16,11 +16,11 @@ import { CostCalculator } from "@/components/marketing/CostCalculator";
 import { SignupLink } from "@/components/marketing/SignupLink";
 import { PRICE_PER_SMS } from "@/lib/pricing";
 import {
-  INSTAGRAM_URL,
   LEGAL_ENTITY,
   SITE_DESCRIPTION,
   SITE_NAME,
   SITE_URL,
+  SOCIAL_PROFILES,
   SUPPORT_EMAIL,
   WHATSAPP_DISPLAY,
   WHATSAPP_URL,
@@ -140,7 +140,7 @@ function structuredData() {
     telephone: WHATSAPP_DISPLAY,
     areaServed: "NG",
     address: { "@type": "PostalAddress", addressCountry: "NG", addressLocality: "Lagos" },
-    sameAs: [INSTAGRAM_URL],
+    sameAs: SOCIAL_PROFILES,
   };
 
   const service = {
