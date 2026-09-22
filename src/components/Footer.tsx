@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { BrandLockup } from "@/components/Brand";
-import { INSTAGRAM_URL, LEGAL_ENTITY, SUPPORT_EMAIL, WHATSAPP_URL } from "@/lib/site";
+import { FACEBOOK_URL, INSTAGRAM_URL, LEGAL_ENTITY, SUPPORT_EMAIL, WHATSAPP_URL } from "@/lib/site";
 
 /**
  * Deliberately minimal. Every link below is one a visitor could plausibly
@@ -45,6 +45,15 @@ export function Footer() {
             <InstagramIcon />
             Instagram
           </a>
+          <a
+            href={FACEBOOK_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 py-2 hover:text-[var(--color-ink-900)]"
+          >
+            <FacebookIcon />
+            Facebook
+          </a>
         </nav>
 
         <div className="text-center text-xs leading-relaxed text-[var(--color-ink-400)] sm:text-right">
@@ -53,6 +62,14 @@ export function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-4" fill="currentColor" aria-hidden>
+      <path d="M14 8.5V7a1 1 0 0 1 1-1h1.5V3.5h-2.2A3.8 3.8 0 0 0 10.5 7.3V8.5H8V11h2.5v9.5H14V11h2.3l.4-2.5H14Z" />
+    </svg>
   );
 }
 

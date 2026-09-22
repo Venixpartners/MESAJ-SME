@@ -18,6 +18,14 @@ export const WHATSAPP_DISPLAY = "+234 805 288 0962";
 export const WHATSAPP_URL = "https://wa.me/2348052880962";
 
 export const INSTAGRAM_URL = "https://www.instagram.com/mesajsms";
+export const FACEBOOK_URL = "https://www.facebook.com/mesajsms";
+
+/**
+ * Every profile that is genuinely ours. Search engines read this as the
+ * sameAs list in our structured data, which is how they tie the site and
+ * the social accounts together as one business.
+ */
+export const SOCIAL_PROFILES = [INSTAGRAM_URL, FACEBOOK_URL];
 
 export const SITE_DESCRIPTION =
   "Bulk SMS for Nigerian businesses. Get your Sender ID approved, top up your wallet and send campaigns to your customers from your own account.";
