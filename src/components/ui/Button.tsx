@@ -39,6 +39,19 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
 }
 
+/**
+ * The same classes a <Button> gets, for elements that navigate rather than
+ * act. Use on <Link> so a link never wraps a <button>, which is invalid
+ * markup and reads as two controls to screen readers.
+ */
+export function buttonClassName({
+  variant = "primary",
+  size = "md",
+  className,
+}: { variant?: Variant; size?: Size; className?: string } = {}) {
+  return cn(base, variants[variant], sizes[size], className);
+}
+
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size = "md", loading, disabled, children, ...props }, ref) => {
     return (

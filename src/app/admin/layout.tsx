@@ -10,7 +10,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   await requireAdminPage();
 
   return (
-    <AppShell variant="admin" brand="Mesaj SME" brandAccent="Admin">
+    <AppShell variant="admin" brandAccent="Admin">
       {children}
     </AppShell>
   );

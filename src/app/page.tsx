@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, MessageSquareText, Wallet } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { buttonClassName } from "@/components/ui/Button";
+import { BrandHomeLink } from "@/components/Brand";
 import { Footer } from "@/components/Footer";
 
 const FEATURES = [
@@ -25,15 +26,13 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col bg-[var(--color-canvas)]">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
-        <span className="text-[15px] font-semibold tracking-tight text-[var(--color-ink-900)]">
-          Mesaj <span className="text-[var(--color-brand-600)]">SME</span>
-        </span>
+        <BrandHomeLink />
         <nav className="flex items-center gap-3">
           <Link href="/login" className="text-sm font-medium text-[var(--color-ink-600)] hover:text-[var(--color-ink-900)]">
             Sign in
           </Link>
-          <Link href="/signup">
-            <Button size="sm">Sign up</Button>
+          <Link href="/signup" className={buttonClassName({ size: "sm" })}>
+            Sign up
           </Link>
         </nav>
       </header>
@@ -51,15 +50,11 @@ export default function Home() {
             with real approval status on every carrier.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link href="/signup">
-              <Button size="md" className="gap-1.5">
-                Get started <ArrowRight className="size-4" aria-hidden />
-              </Button>
+            <Link href="/signup" className={buttonClassName({ className: "gap-1.5" })}>
+              Get started <ArrowRight className="size-4" aria-hidden />
             </Link>
-            <Link href="/login">
-              <Button variant="secondary" size="md">
-                Sign in
-              </Button>
+            <Link href="/login" className={buttonClassName({ variant: "secondary" })}>
+              Sign in
             </Link>
           </div>
         </div>

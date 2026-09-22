@@ -12,10 +12,10 @@
 
 import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export default function GlobalError({
@@ -30,9 +30,9 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col items-center justify-center gap-4 bg-[var(--color-canvas)] px-6 text-center">
-        <p className="text-sm font-semibold tracking-wide text-[var(--color-ink-400)]">Mesaj SME</p>
+        <p className="text-sm font-semibold tracking-wide text-[var(--color-ink-400)]">Mesaj for SMEs</p>
         <h1 className="text-xl font-semibold text-[var(--color-ink-900)]">Something went wrong</h1>
         <p className="max-w-sm text-sm text-[var(--color-ink-500)]">
           We&apos;ve been notified and are looking into it. Try again, or come back in a few minutes.
