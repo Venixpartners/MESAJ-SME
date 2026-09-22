@@ -7,6 +7,7 @@ import { MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, PasswordInput, HelpText } from "@/components/ui/Field";
 import { Alert } from "@/components/ui/Alert";
+import { BrandHomeLink } from "@/components/Brand";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -69,9 +70,7 @@ export default function SignupPage() {
         onSubmit={handleSubmit}
         className="w-full max-w-sm rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-7 shadow-[var(--shadow-md)]"
       >
-        <Link href="/" className="text-sm font-semibold tracking-tight text-[var(--color-ink-900)]">
-          Mesaj <span className="text-[var(--color-brand-600)]">SME</span>
-        </Link>
+        <BrandHomeLink />
         <h1 className="mt-4 text-xl font-semibold text-[var(--color-ink-900)]">Create an account</h1>
         <p className="mt-1 text-sm text-[var(--color-ink-500)]">Set up self-serve bulk SMS for your business.</p>
 

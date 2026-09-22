@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import LogoutButton from "@/components/LogoutButton";
+import { BrandName } from "@/components/Brand";
 
 interface NavItem {
   href: string;
@@ -59,14 +60,12 @@ function isActive(pathname: string, item: NavItem) {
 
 export function AppShell({
   variant,
-  brand,
   brandAccent,
   userLabel,
   children,
 }: {
   variant: "client" | "admin";
-  brand: string;
-  brandAccent: string;
+  brandAccent?: string;
   userLabel?: string;
   children: React.ReactNode;
 }) {
@@ -78,9 +77,7 @@ export function AppShell({
   const sidebarContent = (
     <>
       <div className="flex h-14 items-center gap-2 px-5">
-        <span className={cn("text-[15px] font-semibold tracking-tight", isAdmin ? "text-white" : "text-[var(--color-ink-900)]")}>
-          {brand} <span className={isAdmin ? "text-[var(--color-brand-500)]" : "text-[var(--color-brand-600)]"}>{brandAccent}</span>
-        </span>
+        <BrandName tone={isAdmin ? "dark" : "light"} accent={brandAccent} />
       </div>
       <nav className="flex-1 space-y-0.5 px-3 py-2">
         {navItems.map((item) => {
@@ -172,9 +169,7 @@ export function AppShell({
         >
           <Menu className="size-5" />
         </button>
-        <span className={cn("text-[15px] font-semibold tracking-tight", isAdmin ? "text-white" : "text-[var(--color-ink-900)]")}>
-          {brand} <span className={isAdmin ? "text-[var(--color-brand-500)]" : "text-[var(--color-brand-600)]"}>{brandAccent}</span>
-        </span>
+        <BrandName tone={isAdmin ? "dark" : "light"} accent={brandAccent} />
       </header>
 
       <main className="lg:pl-60">

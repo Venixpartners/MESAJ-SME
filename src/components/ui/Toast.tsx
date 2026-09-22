@@ -36,7 +36,7 @@ const AUTO_DISMISS_MS = 5000;
 // Same tone -> color/icon mapping as Alert.tsx, deliberately kept in sync
 // so an inline Alert and a toast for the same condition look related.
 const TONE_STYLES: Record<Tone, { wrap: string; icon: React.ComponentType<{ className?: string }> }> = {
-  success: { wrap: "bg-[var(--color-brand-50)] text-[var(--color-brand-700)] border-[var(--color-brand-100)]", icon: CheckCircle2 },
+  success: { wrap: "bg-[var(--color-success-100)] text-[var(--color-success-700)] border-[var(--color-success-100)]", icon: CheckCircle2 },
   warning: { wrap: "bg-[var(--color-amber-50)] text-[var(--color-amber-700)] border-[var(--color-amber-100)]", icon: AlertTriangle },
   danger: { wrap: "bg-[var(--color-red-50)] text-[var(--color-red-700)] border-[var(--color-red-100)]", icon: XCircle },
   info: { wrap: "bg-[var(--color-blue-50)] text-[var(--color-blue-700)] border-[var(--color-blue-100)]", icon: Info },
