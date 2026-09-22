@@ -145,7 +145,7 @@ function AdminComposeForm({ tenantId, senderIds }: { tenantId: string; senderIds
         // (a genuine concurrent request) rather than a clean success or
         // failure — nothing to retry, just wait and check the campaign list.
         setError(null);
-        setResult("Send already in progress — refresh in a moment to see the result.");
+        setResult("This send is already in progress. Refresh in a moment to see the result.");
         router.refresh();
         return;
       }
@@ -168,12 +168,12 @@ function AdminComposeForm({ tenantId, senderIds }: { tenantId: string; senderIds
     <Card>
       <CardHeader
         title="Send a campaign on behalf of this client"
-        description="Goes straight out — no separate approval step, since you're both composing and approving. Deducts from the client's wallet the same as a client-submitted campaign."
+        description="This goes out straight away with no separate approval, since you are writing and approving it. It deducts from the client's wallet like any campaign they submit."
       />
 
       {approvedSenderIds.length === 0 ? (
         <p className="text-sm text-[var(--color-ink-500)]">
-          No Sender ID has an approved carrier yet — approve at least one carrier below first.
+          No Sender ID has an approved network yet. Approve at least one network below first.
         </p>
       ) : (
         <div className="space-y-4">
@@ -277,12 +277,12 @@ function TestSendPanel({ tenantId, senderIds }: { tenantId: string; senderIds: S
     <Card>
       <CardHeader
         title="Send a test message"
-        description="Sends immediately using an approved Sender ID/shortCode — not billed to the client and not part of the approval queue."
+        description="Sends straight away using an approved Sender ID or shortCode. The client is not billed and it skips the approval queue."
       />
 
       {approvedSenderIds.length === 0 ? (
         <p className="text-sm text-[var(--color-ink-500)]">
-          No Sender ID has an approved carrier yet — approve at least one carrier below before testing.
+          No Sender ID has an approved network yet. Approve at least one network below before testing.
         </p>
       ) : (
         <form onSubmit={handleSend} className="space-y-4">
