@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import { ToastProvider } from "@/components/ui/Toast";
 import { MetaPixel } from "@/components/MetaPixel";
+import { AttributionCapture } from "@/components/AttributionCapture";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -58,6 +59,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <MetaPixel />
+        <AttributionCapture />
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
