@@ -15,7 +15,7 @@ export default async function AdminSenderIdsPage() {
     <div className="animate-fade-in">
       <PageHeader
         title="Sender ID management"
-        description="Every Sender ID request across all clients, with per-carrier approval status."
+        description="Every Sender ID request across all clients, with approval status for each network."
         tone="dark"
       />
       <SenderIdManager

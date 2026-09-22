@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     template: "%s · Mesaj for SMEs",
   },
   description:
-    "Self-serve bulk SMS for Nigerian businesses. Get your Sender ID whitelisted, top up your wallet, and send campaigns to your customers.",
+    "Bulk SMS for Nigerian businesses. Get your Sender ID approved, top up your wallet and send campaigns to your customers from your own account.",
 };
 
 export default function RootLayout({

@@ -40,7 +40,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   }
   if (campaign.status !== "SENT") {
     return NextResponse.json(
-      { error: `Campaign hasn't been sent yet (status: ${campaign.status}) — nothing to report on.` },
+      { error: `This campaign hasn't been sent yet (status: ${campaign.status}), so there is nothing to report.` },
       { status: 409 }
     );
   }

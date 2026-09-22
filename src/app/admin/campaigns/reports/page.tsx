@@ -55,7 +55,7 @@ export default async function AdminReportsPage({
     <div className="animate-fade-in">
       <PageHeader
         title="Delivery report approval"
-        description="Sent campaigns wait here until you review the delivery outcome and approve — clients can't see per-number status until then."
+        description="Sent campaigns wait here until you review the delivery outcome and approve it. Until then, clients can't see the status of each number."
         tone="dark"
       />
       <ReportQueue
