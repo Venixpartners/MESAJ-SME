@@ -72,7 +72,7 @@ export default function SignupPage() {
       >
         <BrandHomeLink />
         <h1 className="mt-4 text-xl font-semibold text-[var(--color-ink-900)]">Create an account</h1>
-        <p className="mt-1 text-sm text-[var(--color-ink-500)]">Set up self-serve bulk SMS for your business.</p>
+        <p className="mt-1 text-sm text-[var(--color-ink-500)]">Start sending bulk SMS to your customers.</p>
 
         <div className="mt-6 space-y-4">
           <Field label="Business email" htmlFor="email">

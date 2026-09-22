@@ -86,7 +86,7 @@ export default function ForgotPasswordPage() {
         {step === "email" && (
           <>
             <p className="mt-1 text-sm text-[var(--color-ink-500)]">
-              Enter the email on your account and we&apos;ll send you a 6-digit code.
+              Enter the email on your account and we&apos;ll send you a reset code.
             </p>
             <form onSubmit={handleRequestCode}>
               <div className="mt-6 space-y-4">
@@ -112,7 +112,7 @@ export default function ForgotPasswordPage() {
         {step === "code" && !done && (
           <>
             <p className="mt-1 text-sm text-[var(--color-ink-500)]">
-              If an account exists for <strong>{email}</strong>, a 6-digit code is on its way. Check your
+              If an account exists for <strong>{email}</strong>, a reset code is on its way. Check your
               inbox (and spam folder), then enter it below along with your new password.
             </p>
             <form onSubmit={handleResetPassword}>

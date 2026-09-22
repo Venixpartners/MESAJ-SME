@@ -8,7 +8,7 @@ const FEATURES = [
   {
     icon: BadgeCheck,
     title: "Get your Sender ID whitelisted",
-    description: "Request your brand name once — we track approval across MTN, Airtel, Glo, and 9mobile.",
+    description: "Request your brand name once. We follow up with MTN, Airtel, Glo and 9mobile and show you where each one stands.",
   },
   {
     icon: Wallet,
@@ -18,7 +18,7 @@ const FEATURES = [
   {
     icon: MessageSquareText,
     title: "Send campaigns yourself",
-    description: "Compose, validate your numbers, and submit for a quick review — no account manager needed.",
+    description: "Write your message, check your numbers and submit it for a quick review. No account manager needed.",
   },
 ];
 
@@ -46,8 +46,8 @@ export default function Home() {
             Bulk SMS your customers actually receive.
           </h1>
           <p className="mt-4 max-w-md text-base leading-relaxed text-[var(--color-ink-500)]">
-            Get your Sender ID whitelisted, fund your wallet, and send your own campaigns — self-serve,
-            with real approval status on every carrier.
+            Get your Sender ID approved, fund your wallet and send campaigns from your own account. You see
+            the approval status on every network as it happens.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Link href="/signup" className={buttonClassName({ className: "gap-1.5" })}>

@@ -50,7 +50,7 @@ export default function LoginPage() {
       >
         <BrandHomeLink />
         <h1 className="mt-4 text-xl font-semibold text-[var(--color-ink-900)]">Sign in</h1>
-        <p className="mt-1 text-sm text-[var(--color-ink-500)]">Welcome back — enter your details below.</p>
+        <p className="mt-1 text-sm text-[var(--color-ink-500)]">Use the email and password you signed up with.</p>
 
         <div className="mt-6 space-y-4">
           <Field label="Email" htmlFor="email">

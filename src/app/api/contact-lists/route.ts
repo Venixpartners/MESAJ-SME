@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
 
   if (flatValidNumbers.length === 0) {
     return NextResponse.json(
-      { error: "None of the numbers provided were valid — nothing was saved." },
+      { error: "None of those numbers were valid, so nothing was saved." },
       { status: 400 }
     );
   }

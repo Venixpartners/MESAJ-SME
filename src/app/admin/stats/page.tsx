@@ -64,7 +64,7 @@ export default async function AdminStatsPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             tone="admin"
-            label="Recipients attempted (all-time)"
+            label="Recipients attempted (all time)"
             value={stats.sendVolume.totalRecipientsAttempted.toLocaleString()}
           />
           <StatCard tone="admin" label="Carrier batches: succeeded" value={stats.sendVolume.batchesByStatus["SUCCESS"] ?? 0} />
@@ -77,8 +77,8 @@ export default async function AdminStatsPage() {
           />
         </div>
         <p className="mt-2 text-xs text-white/40">
-          Batch outcomes are counted per carrier-batch, not per recipient — a PARTIAL batch&apos;s exact
-          successful-recipient count lives only in the raw Mesaj response, not a queryable column.
+          Batch outcomes are counted per carrier batch, not per recipient. For a PARTIAL batch, the exact number
+          of successful recipients is only in the raw Mesaj response and can&apos;t be queried here.
         </p>
       </section>
 
