@@ -121,7 +121,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (batches.length === 0) {
     return NextResponse.json(
-      { error: "No approved carriers with valid recipients — approve at least one carrier for this Sender ID first." },
+      { error: "No approved carriers have valid recipients. Approve at least one carrier for this Sender ID first." },
       { status: 409 }
     );
   }
@@ -195,7 +195,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       error: err,
     });
     return NextResponse.json(
-      { error: "Send failed before reaching Mesaj — campaign marked FAILED and funds refunded in full." },
+      { error: "The send failed before it reached Mesaj. The campaign is marked FAILED and the funds were refunded in full." },
       { status: 502 }
     );
   }
@@ -275,7 +275,7 @@ async function idempotentAdminSendResponse(campaign: { id: string; status: strin
       {
         status: "IN_PROGRESS",
         campaignId: campaign.id,
-        message: "A send with this idempotency key is already in progress or did not reach a terminal state — check back shortly rather than retrying.",
+        message: "A send with this idempotency key is already in progress or never finished. Check back shortly instead of retrying.",
       },
       { status: 202 }
     );
