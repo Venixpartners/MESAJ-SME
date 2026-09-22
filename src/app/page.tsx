@@ -99,7 +99,7 @@ const EXAMPLES = [
 const FAQS = [
   {
     q: "What does it cost?",
-    a: `\u20a6${PRICE_PER_SMS} for each customer you reach. There is no monthly fee, no setup fee and no minimum order. You add money to your wallet and spend it when you send.`,
+    a: `\u20a6${PRICE_PER_SMS} for each customer you reach. There is no monthly fee, no setup fee and no minimum order. You add money to your wallet and spend it when you send. Top ups are not refundable to cash: your balance stays in your wallet until you use it.`,
   },
   {
     q: "Will my message reach numbers on DND?",
