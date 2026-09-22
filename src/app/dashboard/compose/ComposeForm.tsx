@@ -39,7 +39,7 @@ interface ValidationSummary {
 }
 
 function truncate(text: string, max: number): string {
-  return text.length > max ? `${text.slice(0, max)}\u2026` : text;
+  return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
 export default function ComposeForm({
@@ -172,7 +172,6 @@ export default function ComposeForm({
   useEffect(() => {
     if (!prefillContactListId) return;
     Promise.resolve().then(() => loadContactList(prefillContactListId));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefillContactListId]);
 
   async function handleSaveList() {
@@ -318,7 +317,7 @@ export default function ComposeForm({
                 value={message}
                 onChange={(e) => setMessage(e.target.value.slice(0, MAX_MESSAGE_CHARS))}
                 rows={3}
-                placeholder="Your promotional message\u2026"
+                placeholder="Your promotional message…"
               />
             </Field>
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -326,7 +325,7 @@ export default function ComposeForm({
                 <div className="w-48">
                   <Select aria-label="Insert saved message" defaultValue="" onChange={handleLoadSavedMessage}>
                     <option value="" disabled>
-                      Insert saved message\u2026
+                      Insert saved message…
                     </option>
                     {savedMessages.map((m) => (
                       <option key={m.id} value={m.id}>
@@ -401,7 +400,7 @@ export default function ComposeForm({
                     disabled={loadingListId !== null}
                   >
                     <option value="" disabled>
-                      {loadingListId ? "Loading\u2026" : "Insert saved list\u2026"}
+                      {loadingListId ? "Loading…" : "Insert saved list…"}
                     </option>
                     {contactLists.map((l) => (
                       <option key={l.id} value={l.id}>
@@ -475,7 +474,7 @@ export default function ComposeForm({
           {result && <Alert tone="success">{result}</Alert>}
 
           <Button onClick={handleReview} loading={checking} disabled={!message || !senderId}>
-            {checking ? "Checking numbers\u2026" : "Review & continue"}
+            {checking ? "Checking numbers…" : "Review & continue"}
           </Button>
         </div>
       </Card>
@@ -517,7 +516,7 @@ export default function ComposeForm({
           </p>
           <div className="mt-3 flex gap-3">
             <Button variant="admin" onClick={handleAgreeAndSend} loading={submitting} disabled={validation.totalValid === 0}>
-              {submitting ? "Submitting\u2026" : "Agree & submit for approval"}
+              {submitting ? "Submitting…" : "Agree & submit for approval"}
             </Button>
             <Button variant="secondary" onClick={() => setValidation(null)}>
               Cancel
