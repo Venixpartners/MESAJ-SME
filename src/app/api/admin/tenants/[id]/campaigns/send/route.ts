@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/adminAuth";
 import { cleanAndSortNumbers } from "@/lib/numbers";
 import { sendCampaignAcrossCarriers, type CarrierBatchInput, batchStatusFromResult } from "@/lib/mesajClient";
-import { PRICE_PER_SMS } from "@/lib/pricing";
+import { campaignCost, smsUnits } from "@/lib/pricing";
 import { getSegmentInfo } from "@/lib/smsSegments";
 import { loadCarrierOverrides } from "@/lib/portedNumbers";
 import { checkContentLength, checkRecipientCount, MAX_MESSAGE_SEGMENTS } from "@/lib/limits";
@@ -105,7 +105,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "No valid numbers to send to" }, { status: 400 });
   }
 
-  const estimatedCost = cleaned.totalValid * PRICE_PER_SMS;
+  // Per part per recipient, same rule as a client submission.
+  const estimatedCost = campaignCost(cleaned.totalValid, segmentInfo.segments);
 
   // Build per-carrier batches, same exclusion rule as the client-approval path:
   // only carriers where this Sender ID is APPROVED get sent to. Computed
@@ -142,7 +143,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         throw new Error("INSUFFICIENT_BALANCE");
       }
       await tx.walletTransaction.create({
-        data: { tenantId, type: "SPEND", amount: estimatedCost, units: -cleaned.totalValid },
+        data: {
+          tenantId,
+          type: "SPEND",
+          amount: estimatedCost,
+          units: -smsUnits(cleaned.totalValid, segmentInfo.segments),
+        },
       });
       return tx.campaign.create({
         data: {
@@ -150,6 +156,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           senderIdId: senderId,
           messageBody: message,
           recipientCount: cleaned.totalValid,
+          segmentCount: segmentInfo.segments,
           invalidCount: cleaned.totalInvalid,
           validatedNumbersJson: JSON.stringify(cleaned.validByCarrier),
           status: "APPROVED",
@@ -192,6 +199,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       campaignId: campaign.id,
       tenantId,
       recipientCount: cleaned.totalValid,
+      segmentCount: segmentInfo.segments,
       error: err,
     });
     return NextResponse.json(
@@ -229,12 +237,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     data: { status: totalSent > 0 ? "SENT" : "FAILED" },
   });
 
-  const actualCost = totalSent * PRICE_PER_SMS;
+  const actualCost = campaignCost(totalSent, segmentInfo.segments);
   const refund = estimatedCost - actualCost;
   if (refund > 0) {
     await prisma.tenant.update({ where: { id: tenantId }, data: { walletBalance: { increment: refund } } });
     await prisma.walletTransaction.create({
-      data: { tenantId, type: "REFUND", amount: refund, units: refund / PRICE_PER_SMS },
+      data: {
+        tenantId,
+        type: "REFUND",
+        amount: refund,
+        units: smsUnits(cleaned.totalValid - totalSent, segmentInfo.segments),
+      },
     });
   }
 
