@@ -157,8 +157,8 @@ export default function TermsPage() {
             <h2 className="text-lg font-semibold text-[var(--color-ink-900)]">11. Contact</h2>
             <p className="mt-2">
               Questions about these terms:{" "}
-              <a href="mailto:support@mail.mesaj.cloud" className="text-[var(--color-brand-600)] hover:underline">
-                support@mail.mesaj.cloud
+              <a href="mailto:support@venixpartners.com" className="text-[var(--color-brand-600)] hover:underline">
+                support@venixpartners.com
               </a>
             </p>
           </section>
