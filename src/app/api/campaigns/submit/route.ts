@@ -3,7 +3,7 @@ import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cleanAndSortNumbers } from "@/lib/numbers";
 import { createClient } from "@/lib/supabase/server";
-import { PRICE_PER_SMS } from "@/lib/pricing";
+import { campaignCost, smsUnits } from "@/lib/pricing";
 import { getSegmentInfo } from "@/lib/smsSegments";
 import { loadCarrierOverrides } from "@/lib/portedNumbers";
 import { checkContentLength, checkRecipientCount, MAX_MESSAGE_SEGMENTS } from "@/lib/limits";
@@ -164,7 +164,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No valid numbers to send to" }, { status: 400 });
   }
 
-  const estimatedCost = cleaned.totalValid * PRICE_PER_SMS;
+  // Per part per recipient: a two part message costs twice, the same way
+  // the carrier charges us for it. See lib/pricing.ts.
+  const estimatedCost = campaignCost(cleaned.totalValid, segmentInfo.segments);
 
   // Reserve funds atomically: the balance check and the decrement happen in
   // a single conditional UPDATE (walletBalance >= estimatedCost in the WHERE
@@ -202,6 +204,7 @@ export async function POST(req: NextRequest) {
           senderIdId: senderId,
           messageBody: message,
           recipientCount: cleaned.totalValid,
+          segmentCount: segmentInfo.segments,
           invalidCount: cleaned.totalInvalid,
           validatedNumbersJson: JSON.stringify(cleaned.validByCarrier),
           status: "PENDING_APPROVAL",
@@ -214,7 +217,7 @@ export async function POST(req: NextRequest) {
           tenantId: user.tenantId!,
           type: "SPEND",
           amount: estimatedCost,
-          units: -cleaned.totalValid,
+          units: -smsUnits(cleaned.totalValid, segmentInfo.segments),
         },
       });
 
