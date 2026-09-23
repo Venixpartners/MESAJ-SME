@@ -99,7 +99,7 @@ const EXAMPLES = [
 const FAQS = [
   {
     q: "What does it cost?",
-    a: `\u20a6${PRICE_PER_SMS} for each customer you reach. There is no monthly fee, no setup fee and no minimum order. You add money to your wallet and spend it when you send. Top ups are not refundable to cash: your balance stays in your wallet until you use it.`,
+    a: `\u20a6${PRICE_PER_SMS} per message part, per customer. A part is 160 characters, and most messages are one part, so reaching 1,000 customers costs \u20a6${(1000 * PRICE_PER_SMS).toLocaleString("en-NG")}. A longer message is sent as two or more parts and costs that many times more, because that is how the networks charge us. The calculator above shows the exact figure before you spend anything. There is no monthly fee, no setup fee and no minimum order, and top ups are not refundable to cash: your balance stays in your wallet until you use it.`,
   },
   {
     q: "Will my message reach numbers on DND?",
@@ -153,7 +153,7 @@ function structuredData() {
       "@type": "Offer",
       price: PRICE_PER_SMS,
       priceCurrency: "NGN",
-      description: `${PRICE_PER_SMS} Naira per message delivered to a customer`,
+      description: `${PRICE_PER_SMS} Naira per message part, per recipient`,
       url: `${SITE_URL}/signup`,
     },
   };
@@ -201,7 +201,7 @@ export default function Home() {
             <div>
               <p className="text-sm font-semibold text-[var(--color-brand-700)]">Bulk SMS for Nigerian businesses</p>
               <h1 className="mt-3 text-4xl font-semibold leading-[1.08] tracking-tight text-[var(--color-ink-900)] sm:text-5xl">
-                Text every customer you have, for {`\u20a6${PRICE_PER_SMS}`} each.
+                Text every customer you have, from {`\u20a6${PRICE_PER_SMS}`} each.
               </h1>
               <p className="mt-5 max-w-xl text-lg leading-relaxed text-[var(--color-ink-600)]">
                 Mesaj for SMEs puts your business name on every message, on MTN, Airtel, Glo and 9mobile. Top up a
@@ -235,7 +235,8 @@ export default function Home() {
                 Second term fees are due on 14 March. Log in to the parent portal or come to the bursary.
               </p>
               <p className="mt-4 text-xs leading-relaxed text-[var(--color-ink-400)]">
-                Sent to 1,000 customers for {`\u20a6${(1000 * PRICE_PER_SMS).toLocaleString("en-NG")}`}
+                One part each, sent to 1,000 customers for{" "}
+                {`\u20a6${(1000 * PRICE_PER_SMS).toLocaleString("en-NG")}`}
               </p>
             </div>
           </div>
@@ -243,7 +244,7 @@ export default function Home() {
           <dl className="mt-14 grid gap-px overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-border)] sm:grid-cols-3">
             {[
               { k: "4 networks", v: "MTN, Airtel, Glo and 9mobile from one dashboard" },
-              { k: `\u20a6${PRICE_PER_SMS} flat`, v: "Per customer reached, priced in Naira" },
+              { k: `\u20a6${PRICE_PER_SMS} a part`, v: "Per message part, per customer, priced in Naira" },
               { k: "Lagos support", v: `A ${LEGAL_ENTITY} company` },
             ].map((item) => (
               <div key={item.k} className="bg-[var(--color-surface)] p-5">
