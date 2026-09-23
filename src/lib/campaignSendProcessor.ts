@@ -2,7 +2,7 @@ import * as Sentry from "@sentry/nextjs";
 import { prisma } from "./prisma";
 import { sendCampaignAcrossCarriers, batchStatusFromResult, type CarrierBatchInput } from "./mesajClient";
 import type { Carrier } from "./numbers";
-import { PRICE_PER_SMS } from "./pricing";
+import { campaignCost, smsUnits } from "./pricing";
 import { notifyCampaignSent } from "./notifications";
 import { recordMessageRecipients } from "./messageRecipients";
 import { isUniqueConstraintViolation } from "./prismaErrors";
@@ -311,8 +311,10 @@ async function finalizeCampaignSend(campaign: CampaignWithSendContext): Promise<
     });
   }
 
-  const reservedCost = campaign.recipientCount * PRICE_PER_SMS;
-  const actualCost = totalSent * PRICE_PER_SMS;
+  // Both sides use the part count stored on the campaign at submit time,
+  // so the refund can never disagree with what was reserved.
+  const reservedCost = campaignCost(campaign.recipientCount, campaign.segmentCount);
+  const actualCost = campaignCost(totalSent, campaign.segmentCount);
   const refund = reservedCost - actualCost;
 
   if (refund > 0) {
@@ -325,7 +327,7 @@ async function finalizeCampaignSend(campaign: CampaignWithSendContext): Promise<
         tenantId: campaign.tenantId,
         type: "REFUND",
         amount: refund,
-        units: refund / PRICE_PER_SMS,
+        units: smsUnits(campaign.recipientCount - totalSent, campaign.segmentCount),
       },
     });
   }
