@@ -89,7 +89,7 @@ export async function notifyCampaignRejected(params: {
   reason: string;
 }) {
   const { to, businessName, messageBody, reason } = params;
-  const preview = messageBody.length > 100 ? `${messageBody.slice(0, 100)}…` : messageBody;
+  const preview = messageBody.length > 100 ? `${messageBody.slice(0, 100)}\u2026` : messageBody;
 
   return sendEmail({
     to,
@@ -120,7 +120,7 @@ export async function notifyReportReady(params: {
   appUrl: string;
 }) {
   const { to, businessName, messageBody, recipientCount, deliveredCount, campaignId, appUrl } = params;
-  const preview = messageBody.length > 100 ? `${messageBody.slice(0, 100)}…` : messageBody;
+  const preview = messageBody.length > 100 ? `${messageBody.slice(0, 100)}\u2026` : messageBody;
 
   return sendEmail({
     to,
@@ -142,7 +142,7 @@ export async function notifyCampaignSent(params: {
   refundedAmount: number;
 }) {
   const { to, businessName, messageBody, recipientCount, totalSent, refundedAmount } = params;
-  const preview = messageBody.length > 100 ? `${messageBody.slice(0, 100)}…` : messageBody;
+  const preview = messageBody.length > 100 ? `${messageBody.slice(0, 100)}\u2026` : messageBody;
 
   const fullyFailed = totalSent === 0;
   const partiallyFailed = !fullyFailed && totalSent < recipientCount;
@@ -334,7 +334,7 @@ export async function sendWelcomeSms(params: {
       return { success: false, error: `No welcome-SMS shortCode configured for carrier ${carrier}` };
     }
 
-    const message = `Welcome to ${APP_NAME}. Your account is ready. Log in to request your Sender ID and start sending. Need help? support@mail.mesaj.cloud`;
+    const message = `Welcome to ${APP_NAME}. Your account is ready. Log in to request your Sender ID and start sending. Need help? support@venixpartners.com`;
 
     const result = await sendCarrierBatch({ message, shortCode, recipients: [normalized] });
     if (!result.success) {
