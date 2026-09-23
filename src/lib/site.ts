@@ -11,7 +11,7 @@ export const SITE_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://sms.mesaj.cl
 export const SITE_NAME = "Mesaj for SMEs";
 export const LEGAL_ENTITY = "Venix Partners Limited";
 
-export const SUPPORT_EMAIL = "support@mail.mesaj.cloud";
+export const SUPPORT_EMAIL = "support@venixpartners.com";
 
 /** Display form for humans, and the wa.me form for the link. */
 export const WHATSAPP_DISPLAY = "+234 805 288 0962";
