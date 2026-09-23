@@ -1,29 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  /* Warm paper neutrals — not stock Tailwind slate/gray */
-  --color-canvas: #f7f6f2;
+  /* Mesaj neutrals: White carries the space, Carbon carries the weight,
+     Slate for secondary text. Values from the Mesaj brand guidelines. */
+  --color-canvas: #f6f6f7;
   --color-surface: #ffffff;
   --color-surface-raised: #ffffff;
 
-  --color-ink-900: #14171a;
-  --color-ink-700: #33383d;
-  --color-ink-500: #62686e;
-  --color-ink-400: #868c92;
-  --color-ink-300: #b3b8bc;
-  --color-ink-200: #dcdcd6;
-  --color-ink-100: #eceae4;
-  --color-ink-50: #f3f2ee;
+  --color-ink-900: #141618; /* Carbon */
+  --color-ink-700: #33373c;
+  --color-ink-600: #4a4f55;
+  --color-ink-500: #5a5f66; /* Slate, 6.4:1 on white */
+  --color-ink-400: #6f747b; /* darkest grey that still reads as muted; 4.8:1 on white */
+  --color-ink-300: #b3b6ba;
+  --color-ink-200: #dadbdd;
+  --color-ink-100: #ededed; /* Mist */
+  --color-ink-50: #f4f4f5;
 
-  --color-border: #e3e1da;
-  --color-border-strong: #cbc9c0;
+  --color-border: #e4e4e7;
+  --color-border-strong: #cbccd0;
 
-  /* Signal green — deeper & more considered than emerald-500 */
-  --color-brand-700: #064e3f;
-  --color-brand-600: #0b6e4f;
-  --color-brand-500: #147a56;
-  --color-brand-100: #e3f2e9;
-  --color-brand-50: #f1f8f4;
+  /* Mesaj Violet. Appears once per view, on the element that matters most.
+     brand-500 is the accessible violet for text on dark surfaces (admin);
+     never set brand-600 as text on Carbon, it fails contrast at 2.4:1. */
+  --color-brand-700: #3b0a9b; /* Deep Violet */
+  --color-brand-600: #5d10ed; /* Mesaj Violet, 7.6:1 with white */
+  --color-brand-500: #be9ff8;
+  --color-brand-100: #e7dcfd; /* Violet Tint */
+  --color-brand-50: #f4effe;
+
+  /* Functional colour, product interface only (message and status states) */
+  --color-success-700: #0b6b35;
+  --color-success-600: #12a150; /* Delivered */
+  --color-success-100: #e3f5ea;
 
   --color-amber-700: #92400e;
   --color-amber-600: #b45309;
@@ -40,11 +49,11 @@
   --color-blue-100: #e3ebfd;
   --color-blue-50: #eff4fe;
 
-  /* Admin console — inverted, ops/moderation register */
-  --color-admin-bg: #101314;
-  --color-admin-surface: #191d1f;
-  --color-admin-surface-raised: #1f2426;
-  --color-admin-border: #2b3134;
+  /* Admin console, inverted on Carbon */
+  --color-admin-bg: #141618;
+  --color-admin-surface: #1c1f22;
+  --color-admin-surface-raised: #23272b;
+  --color-admin-border: #30353a;
 
   --shadow-xs: 0 1px 2px 0 rgb(20 23 26 / 0.04);
   --shadow-sm: 0 1px 2px -1px rgb(20 23 26 / 0.08), 0 1px 3px 0 rgb(20 23 26 / 0.06);
@@ -61,6 +70,7 @@
   --color-surface: var(--color-surface);
   --color-ink-900: var(--color-ink-900);
   --color-ink-700: var(--color-ink-700);
+  --color-ink-600: var(--color-ink-600);
   --color-ink-500: var(--color-ink-500);
   --color-ink-400: var(--color-ink-400);
   --color-ink-300: var(--color-ink-300);
@@ -74,7 +84,7 @@
   --color-brand-100: var(--color-brand-100);
   --color-brand-50: var(--color-brand-50);
 
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -89,7 +99,7 @@ html {
 body {
   background: var(--color-canvas);
   color: var(--color-ink-900);
-  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-inter), Arial, ui-sans-serif, system-ui, sans-serif;
   font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
 }

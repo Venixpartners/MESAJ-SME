@@ -46,7 +46,7 @@ export default function CampaignQueue({ campaigns: initial }: { campaigns: Campa
       return;
     }
     setCampaigns((prev) => prev.filter((c) => c.id !== id));
-    toast(`Approved — ${target?.tenant.businessName ?? "campaign"} is sending now.`, "success");
+    toast(`Approved. ${target?.tenant.businessName ?? "The campaign"} is sending now.`, "success");
     router.refresh();
   }
 
@@ -68,7 +68,7 @@ export default function CampaignQueue({ campaigns: initial }: { campaigns: Campa
     setCampaigns((prev) => prev.filter((c) => c.id !== id));
     setRejectingId(null);
     setRejectReason("");
-    toast(`Rejected — ${target?.tenant.businessName ?? "the client"} has been notified.`, "success");
+    toast(`Rejected. ${target?.tenant.businessName ?? "The client"} has been notified.`, "success");
     router.refresh();
   }
 

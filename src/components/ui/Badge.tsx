@@ -3,7 +3,7 @@ import { cn } from "@/lib/cn";
 export type Tone = "success" | "warning" | "danger" | "neutral" | "info";
 
 const tones: Record<Tone, string> = {
-  success: "bg-[var(--color-brand-100)] text-[var(--color-brand-700)]",
+  success: "bg-[var(--color-success-100)] text-[var(--color-success-700)]",
   warning: "bg-[var(--color-amber-100)] text-[var(--color-amber-700)]",
   danger: "bg-[var(--color-red-100)] text-[var(--color-red-700)]",
   neutral: "bg-[var(--color-ink-100)] text-[var(--color-ink-700)]",
@@ -11,7 +11,7 @@ const tones: Record<Tone, string> = {
 };
 
 const dots: Record<Tone, string> = {
-  success: "bg-[var(--color-brand-600)]",
+  success: "bg-[var(--color-success-600)]",
   warning: "bg-[var(--color-amber-600)]",
   danger: "bg-[var(--color-red-600)]",
   neutral: "bg-[var(--color-ink-400)]",

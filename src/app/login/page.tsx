@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, PasswordInput } from "@/components/ui/Field";
 import { Alert } from "@/components/ui/Alert";
+import { BrandHomeLink } from "@/components/Brand";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -47,11 +48,9 @@ export default function LoginPage() {
         onSubmit={handleSubmit}
         className="w-full max-w-sm rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-7 shadow-[var(--shadow-md)]"
       >
-        <Link href="/" className="text-sm font-semibold tracking-tight text-[var(--color-ink-900)]">
-          Mesaj <span className="text-[var(--color-brand-600)]">SME</span>
-        </Link>
+        <BrandHomeLink />
         <h1 className="mt-4 text-xl font-semibold text-[var(--color-ink-900)]">Sign in</h1>
-        <p className="mt-1 text-sm text-[var(--color-ink-500)]">Welcome back — enter your details below.</p>
+        <p className="mt-1 text-sm text-[var(--color-ink-500)]">Use the email and password you signed up with.</p>
 
         <div className="mt-6 space-y-4">
           <Field label="Email" htmlFor="email">

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/adminAuth";
 import { cleanAndSortNumbers } from "@/lib/numbers";
 import { sendCampaignAcrossCarriers, type CarrierBatchInput, batchStatusFromResult } from "@/lib/mesajClient";
-import { PRICE_PER_SMS } from "@/lib/pricing";
+import { campaignCost, smsUnits } from "@/lib/pricing";
 import { getSegmentInfo } from "@/lib/smsSegments";
 import { loadCarrierOverrides } from "@/lib/portedNumbers";
 import { checkContentLength, checkRecipientCount, MAX_MESSAGE_SEGMENTS } from "@/lib/limits";
@@ -105,7 +105,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "No valid numbers to send to" }, { status: 400 });
   }
 
-  const estimatedCost = cleaned.totalValid * PRICE_PER_SMS;
+  // Per part per recipient, same rule as a client submission.
+  const estimatedCost = campaignCost(cleaned.totalValid, segmentInfo.segments);
 
   // Build per-carrier batches, same exclusion rule as the client-approval path:
   // only carriers where this Sender ID is APPROVED get sent to. Computed
@@ -121,7 +122,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (batches.length === 0) {
     return NextResponse.json(
-      { error: "No approved carriers with valid recipients — approve at least one carrier for this Sender ID first." },
+      { error: "No approved carriers have valid recipients. Approve at least one carrier for this Sender ID first." },
       { status: 409 }
     );
   }
@@ -142,7 +143,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         throw new Error("INSUFFICIENT_BALANCE");
       }
       await tx.walletTransaction.create({
-        data: { tenantId, type: "SPEND", amount: estimatedCost, units: -cleaned.totalValid },
+        data: {
+          tenantId,
+          type: "SPEND",
+          amount: estimatedCost,
+          units: -smsUnits(cleaned.totalValid, segmentInfo.segments),
+        },
       });
       return tx.campaign.create({
         data: {
@@ -150,6 +156,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           senderIdId: senderId,
           messageBody: message,
           recipientCount: cleaned.totalValid,
+          segmentCount: segmentInfo.segments,
           invalidCount: cleaned.totalInvalid,
           validatedNumbersJson: JSON.stringify(cleaned.validByCarrier),
           status: "APPROVED",
@@ -192,10 +199,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       campaignId: campaign.id,
       tenantId,
       recipientCount: cleaned.totalValid,
+      segmentCount: segmentInfo.segments,
       error: err,
     });
     return NextResponse.json(
-      { error: "Send failed before reaching Mesaj — campaign marked FAILED and funds refunded in full." },
+      { error: "The send failed before it reached Mesaj. The campaign is marked FAILED and the funds were refunded in full." },
       { status: 502 }
     );
   }
@@ -229,12 +237,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     data: { status: totalSent > 0 ? "SENT" : "FAILED" },
   });
 
-  const actualCost = totalSent * PRICE_PER_SMS;
+  const actualCost = campaignCost(totalSent, segmentInfo.segments);
   const refund = estimatedCost - actualCost;
   if (refund > 0) {
     await prisma.tenant.update({ where: { id: tenantId }, data: { walletBalance: { increment: refund } } });
     await prisma.walletTransaction.create({
-      data: { tenantId, type: "REFUND", amount: refund, units: refund / PRICE_PER_SMS },
+      data: {
+        tenantId,
+        type: "REFUND",
+        amount: refund,
+        units: smsUnits(cleaned.totalValid - totalSent, segmentInfo.segments),
+      },
     });
   }
 
@@ -275,7 +288,7 @@ async function idempotentAdminSendResponse(campaign: { id: string; status: strin
       {
         status: "IN_PROGRESS",
         campaignId: campaign.id,
-        message: "A send with this idempotency key is already in progress or did not reach a terminal state — check back shortly rather than retrying.",
+        message: "A send with this idempotency key is already in progress or never finished. Check back shortly instead of retrying.",
       },
       { status: 202 }
     );

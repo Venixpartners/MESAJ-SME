@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ATTRIBUTION_COOKIE, deserializeAttribution } from "@/lib/attribution";
 import { createClient } from "@/lib/supabase/server";
 import { onboardingSchema, parseOrError } from "@/lib/validation";
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit";
@@ -55,6 +56,13 @@ export async function POST(req: NextRequest) {
   }
   const { businessName, cacNumber, sector, contactPhone } = parsed.data;
 
+  // Which campaign produced this signup, parked in a cookie on the public
+  // pages days or weeks ago (see lib/attribution.ts). Read here because
+  // this is the moment the Tenant first exists to attach it to. Nothing
+  // depends on it, so a missing or malformed cookie just means no known
+  // source, never a failed onboarding.
+  const attribution = deserializeAttribution(req.cookies.get(ATTRIBUTION_COOKIE)?.value);
+
   const tenant = await prisma.tenant.create({
     data: {
       businessName,
@@ -62,6 +70,7 @@ export async function POST(req: NextRequest) {
       sector,
       contactEmail: authUser.email,
       contactPhone,
+      ...attribution,
     },
   });
 

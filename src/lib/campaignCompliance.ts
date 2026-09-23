@@ -129,7 +129,7 @@ function checkThresholdStated(message: string): ComplianceFailure | null {
   if (THRESHOLD_TRIGGER_PATTERN.test(withoutExemptPhrase) && !HAS_NUMBER_PATTERN.test(message)) {
     return {
       rule: 7,
-      ruleName: "Threshold-based promos must state the threshold clearly (Part 4(xi))",
+      ruleName: "Promos with a limited quantity must state that quantity clearly (Part 4(xi))",
       reason: 'Message references a limited quantity (e.g. "first...", "while stocks last") without stating a number.',
     };
   }

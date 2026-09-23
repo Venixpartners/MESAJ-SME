@@ -111,7 +111,7 @@ export default function SenderIdForm() {
           />
           <p className="mt-1.5 text-xs text-[var(--color-ink-500)]">
             A clear photo or scan of your CAC certificate. We forward this to the telco as part of your Sender ID
-            request. JPG, PNG, WEBP, or PDF — max 10 MB.
+            request. JPG, PNG, WEBP or PDF, up to 10 MB.
           </p>
         </Field>
       </FieldGroup>

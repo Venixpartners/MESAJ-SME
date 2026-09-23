@@ -119,7 +119,7 @@ export default function EmailConfirmedPage() {
             <div className="mx-auto flex size-11 items-center justify-center rounded-full bg-green-50 text-green-600">
               <CheckCircle2 className="size-5" aria-hidden />
             </div>
-            <h1 className="mt-4 text-xl font-semibold text-[var(--color-ink-900)]">Email confirmed!</h1>
+            <h1 className="mt-4 text-xl font-semibold text-[var(--color-ink-900)]">Email confirmed</h1>
             <p className="mt-2 text-sm leading-relaxed text-[var(--color-ink-500)]">
               Taking you to your account…
             </p>
@@ -133,7 +133,7 @@ export default function EmailConfirmedPage() {
             </div>
             <h1 className="mt-4 text-xl font-semibold text-[var(--color-ink-900)]">This link didn&apos;t work</h1>
             <p className="mt-2 text-sm leading-relaxed text-[var(--color-ink-500)]">
-              It may have already been used or expired. Try signing in — if your email&apos;s already confirmed,
+              It may have already been used or expired. Try signing in. If your email is already confirmed,
               you&apos;ll go straight to your dashboard.
             </p>
             <Button className="mt-5" onClick={() => router.push("/login")}>

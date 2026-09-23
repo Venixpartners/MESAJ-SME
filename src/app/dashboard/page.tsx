@@ -172,7 +172,7 @@ export default async function DashboardOverviewPage() {
                         View
                       </Link>
                     ) : (
-                      <span className="text-[var(--color-ink-300)]">—</span>
+                      <span className="text-[var(--color-ink-400)]">Not available</span>
                     )}
                   </TD>
                 </TR>

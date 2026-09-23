@@ -175,7 +175,7 @@ export default function SavedMessagesManager({
             segmentSize={segmentInfo.encoding === "UCS2" ? 70 : 160}
           />
           <p className="text-xs text-[var(--color-ink-500)]">
-            {segmentInfo.segments <= 1 ? "1 segment" : `${segmentInfo.segments} segments (billed per segment)`}
+            {segmentInfo.segments <= 1 ? "1 part" : `${segmentInfo.segments} parts`}
           </p>
         </div>
 

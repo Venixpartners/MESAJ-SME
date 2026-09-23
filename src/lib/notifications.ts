@@ -18,7 +18,7 @@ import { normalizeNumber } from "./numbers";
 import type { Carrier, SenderIdStatus } from "@prisma/client";
 import * as Sentry from "@sentry/nextjs";
 
-const APP_NAME = "Mesaj SME";
+const APP_NAME = "Mesaj for SMEs";
 
 function escapeHtml(input: string): string {
   return input
@@ -30,10 +30,10 @@ function escapeHtml(input: string): string {
 }
 
 function wrapHtml(bodyHtml: string): string {
-  return `<div style="font-family: system-ui, -apple-system, sans-serif; max-width: 480px; margin: 0 auto; color: #18181b; line-height: 1.5;">
+  return `<div style="font-family: Arial, Helvetica, sans-serif; max-width: 480px; margin: 0 auto; color: #141618; line-height: 1.5;">
     <p style="font-weight: 600; font-size: 16px; margin-bottom: 16px;">${APP_NAME}</p>
     ${bodyHtml}
-    <p style="margin-top: 24px; font-size: 12px; color: #71717a;">This is an automated notification from ${APP_NAME}.</p>
+    <p style="margin-top: 24px; font-size: 12px; color: #71717a;">This email was sent automatically by ${APP_NAME}. Mesaj is a Venix Partners Limited company.</p>
   </div>`;
 }
 
@@ -54,14 +54,14 @@ export async function notifySenderIdStatusChange(params: {
 
   const statusHtml =
     status === "APPROVED"
-      ? `approved${approvedShortcode ? ` — the approved shortCode is <strong>${escapeHtml(approvedShortcode)}</strong>` : ""}`
+      ? `approved${approvedShortcode ? `. The approved shortCode is <strong>${escapeHtml(approvedShortcode)}</strong>` : ""}`
       : status === "REJECTED"
         ? "rejected"
         : "set back to pending review";
 
   return sendEmail({
     to,
-    subject: `Sender ID "${requestedName}" — ${carrier} update`,
+    subject: `Sender ID "${requestedName}": ${carrier} update`,
     html: wrapHtml(`
       <p>Hi ${escapeHtml(businessName)},</p>
       <p>Your Sender ID request "<strong>${escapeHtml(requestedName)}</strong>" was ${statusHtml} on <strong>${carrier}</strong>.</p>
@@ -127,8 +127,8 @@ export async function notifyReportReady(params: {
     subject: "Your campaign's delivery report is ready",
     html: wrapHtml(`
       <p>Hi ${escapeHtml(businessName)},</p>
-      <p>The delivery report for your campaign "${escapeHtml(preview)}" is ready — <strong>${deliveredCount}</strong> of ${recipientCount} recipients confirmed delivered.</p>
-      <p><a href="${escapeHtml(appUrl)}/dashboard/campaigns/${campaignId}/report" style="color: #16a34a;">View the full report</a>, including per-number status and telco.</p>
+      <p>The delivery report for your campaign "${escapeHtml(preview)}" is ready. <strong>${deliveredCount}</strong> of ${recipientCount} recipients have confirmed delivery.</p>
+      <p><a href="${escapeHtml(appUrl)}/dashboard/campaigns/${campaignId}/report" style="color: #5d10ed;">View the full report</a> to see the status and network for every number.</p>
     `),
   });
 }
@@ -156,12 +156,12 @@ export async function notifyCampaignSent(params: {
   const statusParagraph = fullyFailed
     ? `<p>Your campaign "${escapeHtml(preview)}" was approved, but every carrier it was submitted to failed to deliver it. No messages went out.</p>`
     : partiallyFailed
-      ? `<p>Your campaign "${escapeHtml(preview)}" was approved and sent — <strong>${totalSent}</strong> of ${recipientCount} recipients received it. The rest failed at the carrier level.</p>`
+      ? `<p>Your campaign "${escapeHtml(preview)}" was approved and sent. <strong>${totalSent}</strong> of ${recipientCount} recipients received it. The rest failed at the network.</p>`
       : `<p>Your campaign "${escapeHtml(preview)}" was approved and sent to all <strong>${recipientCount}</strong> recipients.</p>`;
 
   const refundParagraph =
     refundedAmount > 0
-      ? `<p>You were only charged for the messages that actually sent — ₦${refundedAmount.toLocaleString("en-NG")} for the rest has already been refunded to your wallet.</p>`
+      ? `<p>You were only charged for the messages that went out. The ₦${refundedAmount.toLocaleString("en-NG")} for the rest is already back in your wallet.</p>`
       : "";
 
   return sendEmail({
@@ -224,7 +224,7 @@ export async function notifyAdminNewSignup(params: {
             <strong>Contact email:</strong> ${escapeHtml(contactEmail)}<br />
             <strong>Contact phone:</strong> ${escapeHtml(contactPhone)}
           </p>
-          <p><a href="${escapeHtml(appUrl)}/admin" style="color: #16a34a;">Log in to view their account</a></p>
+          <p><a href="${escapeHtml(appUrl)}/admin" style="color: #5d10ed;">Log in to view their account</a></p>
         `),
       })
     )
@@ -267,8 +267,8 @@ export async function notifyAdminNewSenderIdRequest(params: {
             <strong>CAC number:</strong> ${escapeHtml(cacNumber)}<br />
             <strong>Sector:</strong> ${escapeHtml(sector)}
           </p>
-          <p><a href="${escapeHtml(appUrl)}/admin/sender-ids" style="color: #16a34a;">Log in to review the request</a></p>
-          <p><a href="${escapeHtml(appUrl)}/api/admin/sender-id/${escapeHtml(senderIdId)}/cac-document" style="color: #16a34a;">Download the CAC document</a></p>
+          <p><a href="${escapeHtml(appUrl)}/admin/sender-ids" style="color: #5d10ed;">Log in to review the request</a></p>
+          <p><a href="${escapeHtml(appUrl)}/api/admin/sender-id/${escapeHtml(senderIdId)}/cac-document" style="color: #5d10ed;">Download the CAC document</a></p>
         `),
       })
     )
@@ -334,7 +334,7 @@ export async function sendWelcomeSms(params: {
       return { success: false, error: `No welcome-SMS shortCode configured for carrier ${carrier}` };
     }
 
-    const message = `Welcome to ${APP_NAME}, your No.1 bulk SMS service! Your account is ready — log in to request your Sender ID and start sending. Need help? support@mail.mesaj.cloud`;
+    const message = `Welcome to ${APP_NAME}. Your account is ready. Log in to request your Sender ID and start sending. Need help? support@mail.mesaj.cloud`;
 
     const result = await sendCarrierBatch({ message, shortCode, recipients: [normalized] });
     if (!result.success) {

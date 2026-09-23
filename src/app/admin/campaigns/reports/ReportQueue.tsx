@@ -37,7 +37,7 @@ export default function ReportQueue({ campaigns: initial }: { campaigns: Campaig
 
   async function handleApprove(id: string) {
     if (busyId) return;
-    if (!confirm("Approve this report? The client will be able to see per-number delivery status immediately.")) return;
+    if (!confirm("Approve this report? The client will see the delivery status for every number straight away.")) return;
     setBusyId(id);
     const target = campaigns.find((c) => c.id === id);
     const res = await fetch(`/api/admin/campaigns/${id}/approve-report`, { method: "POST" });
@@ -48,7 +48,7 @@ export default function ReportQueue({ campaigns: initial }: { campaigns: Campaig
       return;
     }
     setCampaigns((prev) => prev.filter((c) => c.id !== id));
-    toast(`Report approved — ${target?.tenant.businessName ?? "the client"} can now view it.`, "success");
+    toast(`Report approved. ${target?.tenant.businessName ?? "The client"} can view it now.`, "success");
     router.refresh();
   }
 
@@ -112,7 +112,7 @@ export default function ReportQueue({ campaigns: initial }: { campaigns: Campaig
               </Button>
               {stillPending && (
                 <span className="text-xs text-[var(--color-ink-400)]">
-                  Some deliveries are still unconfirmed — approving now will freeze the report at current counts.
+                  Some deliveries are still unconfirmed. If you approve now, the report keeps today&apos;s counts.
                 </span>
               )}
             </div>

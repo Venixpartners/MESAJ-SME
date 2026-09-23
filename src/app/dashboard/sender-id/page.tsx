@@ -40,7 +40,7 @@ export default async function SenderIdPage() {
             <EmptyState
               icon={BadgeCheck}
               title="No Sender ID requests yet"
-              description="Submit a request above — we'll track approval on MTN, Airtel, Glo, and 9mobile."
+              description="Submit a request above and we'll follow up with MTN, Airtel, Glo and 9mobile for you."
             />
           </Card>
         ) : (

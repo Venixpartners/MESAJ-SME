@@ -9,6 +9,29 @@ import { TableShell, THead, TH, TR, TD } from "@/components/ui/Table";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Users } from "lucide-react";
 
+/**
+ * How this client found us, as recorded at onboarding (see
+ * lib/attribution.ts). Anyone who signed up before attribution existed,
+ * or who typed the address in, shows as unknown rather than pretending
+ * to a source we never had.
+ */
+function describeSource(tenant: {
+  utmSource: string | null;
+  utmCampaign: string | null;
+  adClickId: string | null;
+}) {
+  if (!tenant.utmSource && !tenant.utmCampaign && !tenant.adClickId) {
+    return <span className="text-[var(--color-ink-400)]">Unknown</span>;
+  }
+  const source = tenant.utmSource ?? (tenant.adClickId ? "ad click" : "campaign");
+  return (
+    <span>
+      {source}
+      {tenant.utmCampaign && <span className="block text-xs text-[var(--color-ink-500)]">{tenant.utmCampaign}</span>}
+    </span>
+  );
+}
+
 export default async function AdminClientsPage({
   searchParams,
 }: {
@@ -51,6 +74,7 @@ export default async function AdminClientsPage({
             <TH>Wallet</TH>
             <TH>Sender IDs</TH>
             <TH>Campaigns</TH>
+            <TH>Came from</TH>
             <TH>Joined</TH>
           </THead>
           <tbody>
@@ -65,7 +89,7 @@ export default async function AdminClientsPage({
                 <TD>{t.sector}</TD>
                 <TD className="font-mono tabular-nums">₦{t.walletBalance.toLocaleString()}</TD>
                 <TD className="font-mono tabular-nums">{t._count.senderIds}</TD>
-                <TD className="font-mono tabular-nums">{t._count.campaigns}</TD>
+                <TD>{describeSource(t)}</TD>
                 <TD className="text-[var(--color-ink-500)]">{formatDate(t.createdAt)}</TD>
               </TR>
             ))}

@@ -1,7 +1,7 @@
 import { LegalPageHeader } from "@/components/LegalPageHeader";
 import { Footer } from "@/components/Footer";
 
-export const metadata = { title: "Terms of Service — Mesaj SME" };
+export const metadata = { title: "Terms of Service | Mesaj SME" };
 
 export default function TermsPage() {
   return (
@@ -9,7 +9,7 @@ export default function TermsPage() {
       <LegalPageHeader />
       <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
         <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-ink-900)]">Terms of Service</h1>
-        <p className="mt-2 text-sm text-[var(--color-ink-500)]">Last updated: August 2026</p>
+        <p className="mt-2 text-sm text-[var(--color-ink-500)]">Last updated: September 2026</p>
 
         <div className="prose-legal mt-8 space-y-8 text-[15px] leading-relaxed text-[var(--color-ink-700)]">
           <section>
@@ -25,8 +25,8 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-[var(--color-ink-900)]">2. Your account and business information</h2>
             <p className="mt-2">
-              To use the Service you provide business information — including your business name, CAC
-              registration number, sector, and a photo or scan of your CAC certificate — which we forward to
+              To use the Service you provide business information, including your business name, CAC
+              registration number, sector, and a photo or scan of your CAC certificate, which we forward to
               telecom carriers as part of getting your Sender ID approved. You&apos;re responsible for making
               sure this information is accurate and that you&apos;re authorized to submit it. Submitting false
               or misleading business information is grounds for suspending your account.
@@ -36,13 +36,13 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-[var(--color-ink-900)]">3. Sender IDs and message content</h2>
             <p className="mt-2">
-              Sender ID requests are reviewed and forwarded to MTN, Airtel, Glo, and 9mobile individually —
-              approval timing and outcome are ultimately up to each carrier, not us. Once approved, you may
+              Sender ID requests are reviewed and forwarded to MTN, Airtel, Glo, and 9mobile individually.
+              Approval timing and outcome are ultimately up to each carrier, not us. Once approved, you may
               send campaigns under that Sender ID.
             </p>
             <p className="mt-2">
               All campaign content is checked against Nigerian Communications Commission (NCC) advertising
-              guidelines before sending — messages that fail these checks are rejected automatically and
+              guidelines before sending. Messages that fail these checks are rejected automatically and
               never sent. Passing these checks is not a guarantee of full regulatory compliance in every
               respect; you remain responsible for the content of messages sent from your account, including
               compliance with NCC rules, other applicable Nigerian law, and any sector-specific regulations
@@ -62,7 +62,7 @@ export default function TermsPage() {
             <h2 className="text-lg font-semibold text-[var(--color-ink-900)]">4. Recipient consent is your responsibility</h2>
             <p className="mt-2">
               When you upload a contact list or send a campaign, you&apos;re confirming that you have the
-              right to message every number on that list — whether through their consent, an existing
+              right to message every number on that list, whether through their consent, an existing
               customer relationship, or another lawful basis. We don&apos;t verify this on your behalf. You
               agree to indemnify us against any claim, fine, or complaint arising from messages sent to
               people who did not consent to receive them.
@@ -73,7 +73,16 @@ export default function TermsPage() {
             <h2 className="text-lg font-semibold text-[var(--color-ink-900)]">5. Wallet, billing, and refunds</h2>
             <p className="mt-2">
               You fund your wallet in advance via Paystack; campaign costs are deducted from this balance
-              when you submit a campaign. Refund policy for a campaign send:
+              when you submit a campaign.
+            </p>
+            <p className="mt-2">
+              Messages are charged per part, per recipient. An SMS part is 160 characters, or 70 characters if
+              your message uses emoji, accented letters or curly quotes. A message longer than one part is sent
+              as several parts and is charged for each of them, because the networks charge us the same way. The
+              exact cost is shown to you before you submit a campaign.
+            </p>
+            <p className="mt-2">
+              Refund policy for a campaign send:
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-6">
               <li>
@@ -82,13 +91,24 @@ export default function TermsPage() {
               </li>
               <li>
                 If a carrier accepts and dispatches a message but it ultimately fails to reach the recipient&apos;s
-                phone (e.g. the phone is off, the number is inactive), that message is <strong>not</strong> refunded
-                — the carrier charges for the attempt regardless of final delivery, consistent with standard
+                phone (e.g. the phone is off, the number is inactive), that message is <strong>not</strong> refunded.
+                The carrier charges for the attempt regardless of final delivery, consistent with standard
                 SMS industry billing.
               </li>
             </ul>
             <p className="mt-2">
               Wallet funds have no cash value outside the Service and are non-transferable between accounts.
+            </p>
+            <p className="mt-2">
+              <strong>Top ups are not refundable.</strong> Money you add to your wallet buys message credit and
+              stays in your wallet. We do not pay it back to your card, your bank account, or anyone else,
+              whether you spend it or not. This applies on account closure too.
+            </p>
+            <p className="mt-2">
+              Where these terms say an amount is refunded, that always means it is credited back to your Mesaj
+              wallet for future sends. It is never paid out to you in cash. Once a campaign has been submitted
+              and the messages have been handed to the carriers, that spend is final: we cannot recall a
+              message that has already gone out, and we cannot reverse the charge for it.
             </p>
           </section>
 
@@ -97,8 +117,8 @@ export default function TermsPage() {
             <p className="mt-2">
               We may suspend or terminate your account for violating these terms, sending prohibited content,
               providing false business information, or fraudulent payment activity. You may stop using the
-              Service at any time; unused wallet balance handling on account closure will be addressed on a
-              case-by-case basis — contact us if you close your account with a remaining balance.
+              Service at any time. As set out in section 5, any unused wallet balance is not refundable to cash
+              when you close your account.
             </p>
           </section>
 
@@ -106,8 +126,8 @@ export default function TermsPage() {
             <h2 className="text-lg font-semibold text-[var(--color-ink-900)]">7. Service availability</h2>
             <p className="mt-2">
               We aim to keep the Service available and reliable but don&apos;t guarantee uninterrupted access.
-              Message delivery ultimately depends on third parties — telecom carriers and our SMS gateway
-              provider — whose performance is outside our direct control.
+              Message delivery ultimately depends on third parties, telecom carriers and our SMS gateway
+              provider, whose performance is outside our direct control.
             </p>
           </section>
 

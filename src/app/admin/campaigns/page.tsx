@@ -30,7 +30,7 @@ export default async function AdminCampaignsPage({
     <div className="animate-fade-in">
       <PageHeader
         title="Campaign approval queue"
-        description="Review message content only — invalid numbers were already excluded, and unapproved carriers are automatically skipped on send."
+        description="Review the message content only. Invalid numbers are already removed, and networks without approval are skipped when it sends."
         tone="dark"
       />
       <CampaignQueue

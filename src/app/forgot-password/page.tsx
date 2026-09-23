@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, PasswordInput } from "@/components/ui/Field";
 import { Alert } from "@/components/ui/Alert";
+import { BrandHomeLink } from "@/components/Brand";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -79,15 +80,13 @@ export default function ForgotPasswordPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--color-canvas)] px-6">
       <div className="w-full max-w-sm rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-7 shadow-[var(--shadow-md)]">
-        <Link href="/" className="text-sm font-semibold tracking-tight text-[var(--color-ink-900)]">
-          Mesaj <span className="text-[var(--color-brand-600)]">SME</span>
-        </Link>
+        <BrandHomeLink />
         <h1 className="mt-4 text-xl font-semibold text-[var(--color-ink-900)]">Reset your password</h1>
 
         {step === "email" && (
           <>
             <p className="mt-1 text-sm text-[var(--color-ink-500)]">
-              Enter the email on your account and we&apos;ll send you a 6-digit code.
+              Enter the email on your account and we&apos;ll send you a reset code.
             </p>
             <form onSubmit={handleRequestCode}>
               <div className="mt-6 space-y-4">
@@ -113,7 +112,7 @@ export default function ForgotPasswordPage() {
         {step === "code" && !done && (
           <>
             <p className="mt-1 text-sm text-[var(--color-ink-500)]">
-              If an account exists for <strong>{email}</strong>, a 6-digit code is on its way. Check your
+              If an account exists for <strong>{email}</strong>, a reset code is on its way. Check your
               inbox (and spam folder), then enter it below along with your new password.
             </p>
             <form onSubmit={handleResetPassword}>
