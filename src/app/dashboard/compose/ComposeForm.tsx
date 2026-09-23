@@ -5,7 +5,7 @@ import { Bookmark, CheckCircle2, Repeat2, Upload, XCircle } from "lucide-react";
 import { getSegmentInfo } from "@/lib/smsSegments";
 import { parseNumbersFromCsv } from "@/lib/numbers";
 import { MAX_RECIPIENTS_PER_CAMPAIGN, MAX_REQUEST_BODY_BYTES, MAX_MESSAGE_CHARS } from "@/lib/limits";
-import { PRICE_PER_SMS } from "@/lib/pricing";
+import { PRICE_PER_SMS, campaignCost } from "@/lib/pricing";
 import type { ComplianceFailure } from "@/lib/campaignCompliance";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
@@ -355,14 +355,16 @@ export default function ComposeForm({
               />
               <p className="text-xs text-[var(--color-ink-500)]">
                 {segmentInfo.charsRemainingInSegment} left in part {Math.max(segmentInfo.segments, 1)} ·{" "}
-                {segmentInfo.segments <= 1 ? "1 part" : `${segmentInfo.segments} parts`} · ₦{PRICE_PER_SMS} per
-                recipient
+                {segmentInfo.segments <= 1 ? "1 part" : `${segmentInfo.segments} parts`} · ₦{PRICE_PER_SMS} per part,
+                per recipient
               </p>
             </div>
             {segmentInfo.segments > 1 && (
-              <p className="mt-1 text-xs text-[var(--color-ink-500)]">
-                A longer message is still {`\u20a6${PRICE_PER_SMS}`} per recipient. The parts arrive as one message on
-                the phone.
+              <p className="mt-1 text-xs text-[var(--color-amber-700)]">
+                This message is {segmentInfo.segments} parts, so each recipient costs{" "}
+                {`\u20a6${campaignCost(1, segmentInfo.segments)}`} instead of {`\u20a6${PRICE_PER_SMS}`}. It still
+                arrives as one message on the phone. Shorten it below {segmentInfo.encoding === "UCS2" ? 70 : 160}{" "}
+                characters to pay for one part.
               </p>
             )}
             {segmentInfo.encoding === "UCS2" && (
@@ -511,7 +513,15 @@ export default function ComposeForm({
             ))}
           </div>
 
-          <p className="mt-4 text-sm font-medium text-[var(--color-ink-900)]">
+          <p className="mt-4 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-3 text-sm text-[var(--color-ink-700)]">
+            This campaign will cost{" "}
+            <strong className="font-mono tabular-nums">
+              {`\u20a6${campaignCost(validation.totalValid, segmentInfo.segments).toLocaleString("en-NG")}`}
+            </strong>{" "}
+            · {validation.totalValid} recipients ×{" "}
+            {segmentInfo.segments <= 1 ? "1 part" : `${segmentInfo.segments} parts`} × {`\u20a6${PRICE_PER_SMS}`}
+          </p>
+          <p className="mt-3 text-sm font-medium text-[var(--color-ink-900)]">
             Do you agree to proceed with only the {validation.totalValid} valid numbers?
           </p>
           <div className="mt-3 flex gap-3">
