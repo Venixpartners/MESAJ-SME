@@ -294,3 +294,71 @@ describe("POST /api/campaigns/submit — baseline behavior", () => {
     expect(res.status).toBe(402);
   });
 });
+
+describe("POST /api/campaigns/submit — per part billing", () => {
+  /** Captures what the transaction was asked to reserve and record. */
+  function captureTx() {
+    const tenantUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
+    const campaignCreate = vi.fn().mockResolvedValue({ id: "campaign-new" });
+    const walletCreate = vi.fn().mockResolvedValue({});
+    mockTransaction({
+      senderId: { findFirst: vi.fn().mockResolvedValue({ id: "sender-1" }) },
+      tenant: { updateMany: tenantUpdateMany },
+      campaign: { create: campaignCreate },
+      walletTransaction: { create: walletCreate },
+    });
+    return { tenantUpdateMany, campaignCreate, walletCreate };
+  }
+
+  const TWO_RECIPIENTS = ["08031234567", "08021234567"];
+
+  it("reserves one unit per recipient for a single part message", async () => {
+    mockAuthedUser();
+    const { tenantUpdateMany, walletCreate } = captureTx();
+
+    await POST(postRequest({ senderId: "sender-1", message: "Short and sweet.", numbers: TWO_RECIPIENTS }));
+
+    // 2 recipients * 1 part * ₦9
+    expect(tenantUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { walletBalance: { decrement: 18 } } })
+    );
+    expect(walletCreate).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ amount: 18, units: -2 }) }));
+  });
+
+  it("reserves double for a two part message, the same way the carrier charges us", async () => {
+    mockAuthedUser();
+    const { tenantUpdateMany, walletCreate } = captureTx();
+    const twoParts = "x".repeat(200); // over 160 GSM characters, so two parts
+
+    await POST(postRequest({ senderId: "sender-1", message: twoParts, numbers: TWO_RECIPIENTS }));
+
+    // 2 recipients * 2 parts * ₦9
+    expect(tenantUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { walletBalance: { decrement: 36 } } })
+    );
+    expect(walletCreate).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ amount: 36, units: -4 }) }));
+  });
+
+  it("stores the part count on the campaign, so a later refund matches the charge", async () => {
+    mockAuthedUser();
+    const { campaignCreate } = captureTx();
+
+    await POST(postRequest({ senderId: "sender-1", message: "x".repeat(200), numbers: TWO_RECIPIENTS }));
+
+    expect(campaignCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ segmentCount: 2, recipientCount: 2 }) })
+    );
+  });
+
+  it("counts an emoji message in 70 character parts, not 160", async () => {
+    mockAuthedUser();
+    const { tenantUpdateMany } = captureTx();
+
+    // 100 characters including an emoji forces UCS-2, so two parts.
+    await POST(postRequest({ senderId: "sender-1", message: "\u{1F389}" + "x".repeat(99), numbers: TWO_RECIPIENTS }));
+
+    expect(tenantUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { walletBalance: { decrement: 36 } } })
+    );
+  });
+});
