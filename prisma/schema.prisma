@@ -216,6 +216,14 @@ model Campaign {
   senderId         SenderId       @relation(fields: [senderIdId], references: [id])
   messageBody      String
   recipientCount   Int
+  /// How many SMS parts this message body encodes to, captured at submit
+  /// time (see lib/smsSegments.ts). Billing is per part per recipient, so
+  /// this is what the charge was based on: refunds read it back rather
+  /// than recomputing, so a later change to the encoder can never make a
+  /// refund disagree with the original charge. Defaults to 1 for rows
+  /// created before per-part billing existed, which is what they were
+  /// actually charged.
+  segmentCount     Int            @default(1)
   invalidCount     Int            @default(0)
   /// Client-supplied `Idempotency-Key` header from POST /api/campaigns/submit,
   /// echoed back on retries so a double-click or client retry can't create
