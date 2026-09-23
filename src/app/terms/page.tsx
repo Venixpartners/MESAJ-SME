@@ -73,7 +73,16 @@ export default function TermsPage() {
             <h2 className="text-lg font-semibold text-[var(--color-ink-900)]">5. Wallet, billing, and refunds</h2>
             <p className="mt-2">
               You fund your wallet in advance via Paystack; campaign costs are deducted from this balance
-              when you submit a campaign. Refund policy for a campaign send:
+              when you submit a campaign.
+            </p>
+            <p className="mt-2">
+              Messages are charged per part, per recipient. An SMS part is 160 characters, or 70 characters if
+              your message uses emoji, accented letters or curly quotes. A message longer than one part is sent
+              as several parts and is charged for each of them, because the networks charge us the same way. The
+              exact cost is shown to you before you submit a campaign.
+            </p>
+            <p className="mt-2">
+              Refund policy for a campaign send:
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-6">
               <li>
