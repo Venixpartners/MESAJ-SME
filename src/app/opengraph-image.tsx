@@ -60,7 +60,7 @@ export default async function OpengraphImage() {
             Text every customer you have,
           </span>
           <span style={{ color: "#be9ff8", fontSize: 76, fontWeight: 700, lineHeight: 1.1, letterSpacing: -2 }}>
-            for {PRICE_PER_SMS} Naira each.
+            from {PRICE_PER_SMS} Naira each.
           </span>
         </div>
 

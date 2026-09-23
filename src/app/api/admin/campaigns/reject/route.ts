@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdminApi } from "@/lib/adminAuth";
-import { PRICE_PER_SMS } from "@/lib/pricing";
+import { campaignCost, smsUnits } from "@/lib/pricing";
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit";
 import { notifyCampaignRejected } from "@/lib/notifications";
 
@@ -42,7 +42,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Campaign is not pending approval (status: ${campaign.status})` }, { status: 409 });
   }
 
-  const refundAmount = campaign.recipientCount * PRICE_PER_SMS;
+  // Reverses exactly what submit reserved, using the part count stored on
+  // the campaign rather than recomputing it from the message body.
+  const refundAmount = campaignCost(campaign.recipientCount, campaign.segmentCount);
 
   // Atomic guard: only proceeds if the campaign is still PENDING_APPROVAL at
   // the moment of the update, so a concurrent approve can't be undone by a
@@ -69,7 +71,7 @@ export async function POST(req: NextRequest) {
         tenantId: campaign.tenantId,
         type: "REFUND",
         amount: refundAmount,
-        units: campaign.recipientCount,
+        units: smsUnits(campaign.recipientCount, campaign.segmentCount),
       },
     }),
   ]);

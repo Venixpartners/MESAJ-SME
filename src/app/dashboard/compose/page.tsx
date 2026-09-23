@@ -48,7 +48,7 @@ export default async function ComposePage({
     <div className="animate-fade-in">
       <PageHeader
         title="Send a campaign"
-        description="160 characters per part. Messages are sent only to carriers where your Sender ID is approved."
+        description="160 characters per part, charged per part. Messages are sent only to carriers where your Sender ID is approved."
       />
       <ComposeForm
         senderIds={senderIds}

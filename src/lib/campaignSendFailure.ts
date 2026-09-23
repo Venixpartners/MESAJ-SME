@@ -14,23 +14,25 @@
  *
  * Since the send call threw before any batch result came back, we know
  * zero messages went out — so this always refunds the FULL reserved
- * amount (recipientCount * PRICE_PER_SMS), not a partial one. Shared by
+ * amount (see campaignCost in lib/pricing.ts), not a partial one. Shared by
  * both send paths (client-approval and admin-initiated) so they recover
  * identically.
  */
 
 import * as Sentry from "@sentry/nextjs";
 import { prisma } from "./prisma";
-import { PRICE_PER_SMS } from "./pricing";
+import { campaignCost, smsUnits } from "./pricing";
 
 export async function handleCampaignSendFailure(params: {
   campaignId: string;
   tenantId: string;
   recipientCount: number;
+  /** Parts per message, so the refund matches what was actually charged. */
+  segmentCount: number;
   error: unknown;
 }): Promise<void> {
-  const { campaignId, tenantId, recipientCount, error } = params;
-  const fullRefund = recipientCount * PRICE_PER_SMS;
+  const { campaignId, tenantId, recipientCount, segmentCount, error } = params;
+  const fullRefund = campaignCost(recipientCount, segmentCount);
 
   // Best-effort visibility first — if the DB writes below also fail, we
   // still want this on record rather than losing it entirely.
@@ -54,7 +56,7 @@ export async function handleCampaignSendFailure(params: {
         tenantId,
         type: "REFUND",
         amount: fullRefund,
-        units: recipientCount,
+        units: smsUnits(recipientCount, segmentCount),
       },
     }),
   ]);
