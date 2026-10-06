@@ -64,8 +64,11 @@ interface MesajWebhookPayload {
 function toDeliveryStatus(status: string): "DELIVERED" | "FAILED" | "EXPIRED" | null {
   if (status === "DELIVERED") return "DELIVERED";
   if (status === "EXPIRED") return "EXPIRED";
-  if (status === "SENT" || status === "QUEUED" || status === "PENDING") return null;
-  return "FAILED"; // covers FAILED, UNDELIVERED, REJECTED, or any status we don't explicitly recognize
+  // Explicit failure states only. FLAGGED (content held for review on the
+  // Mesaj side), SENT, QUEUED and anything we don't recognise are treated
+  // as "not final yet", so a later DELIVERED webhook can still land.
+  if (["FAILED", "UNDELIVERED", "REJECTED", "BLOCKED"].includes(status)) return "FAILED";
+  return null;
 }
 
 export async function POST(req: NextRequest) {
@@ -167,7 +170,11 @@ export async function POST(req: NextRequest) {
   // right. Same status arriving twice (a true duplicate webhook) is fine
   // to no-op past this guard too, since there's nothing new to write.
   const alreadyTerminal = target.deliveryStatus !== "PENDING";
-  if (alreadyTerminal && target.deliveryStatus !== deliveryStatus) {
+  // A handset DELIVERED receipt is proof the message arrived, so it always
+  // wins over an earlier FAILED/EXPIRED (e.g. one written while the message
+  // sat flagged upstream). The reverse is still blocked.
+  const deliveredOverridesFailure = alreadyTerminal && deliveryStatus === "DELIVERED" && target.deliveryStatus !== "DELIVERED";
+  if (alreadyTerminal && !deliveredOverridesFailure && target.deliveryStatus !== deliveryStatus) {
     Sentry.captureMessage("Mesaj webhook: conflicting terminal status ignored", {
       level: "warning",
       extra: {
@@ -179,7 +186,7 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json({ received: true, matched: true, terminal: true, applied: false });
   }
-  if (alreadyTerminal) {
+  if (alreadyTerminal && !deliveredOverridesFailure) {
     // Same terminal status arriving again — true duplicate, nothing to do.
     return NextResponse.json({ received: true, matched: true, terminal: true, applied: false });
   }
