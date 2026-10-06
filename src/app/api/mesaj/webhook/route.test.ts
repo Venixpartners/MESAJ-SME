@@ -235,4 +235,29 @@ describe("POST /api/mesaj/webhook — downgrade guard", () => {
     expect(mockedPrisma.messageRecipient.update).not.toHaveBeenCalled();
     expect(mockedCaptureMessage).not.toHaveBeenCalled();
   });
+
+  it("FLAGGED is not final: the row stays PENDING so a later DELIVERED can land", async () => {
+    mockedPrisma.messageRecipient.findUnique.mockResolvedValue(PENDING_ROW as never);
+
+    const res = await POST(webhookRequest(payload({ event: "SMS_FLAGGED", status: "FLAGGED" }), "?secret=test-secret"));
+    const json = await res.json();
+
+    expect(json).toEqual(expect.objectContaining({ matched: true, terminal: false }));
+    expect(mockedPrisma.messageRecipient.update).not.toHaveBeenCalled();
+  });
+
+  it("DELIVERED overrides an earlier FAILED, since a handset receipt proves arrival", async () => {
+    mockedPrisma.messageRecipient.findUnique.mockResolvedValue({
+      ...PENDING_ROW,
+      deliveryStatus: "FAILED",
+    } as never);
+
+    const res = await POST(webhookRequest(payload({ status: "DELIVERED" }), "?secret=test-secret"));
+    const json = await res.json();
+
+    expect(json).toEqual(expect.objectContaining({ terminal: true, applied: true }));
+    expect(mockedPrisma.messageRecipient.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ deliveryStatus: "DELIVERED", failedAt: null }) })
+    );
+  });
 });
