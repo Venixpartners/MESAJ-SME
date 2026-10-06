@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { BadgeCheck, Building2, ChevronRight, FileText } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { formatDate } from "@/lib/formatDate";
+import { matchProtectedBrand } from "@/lib/protectedSenderIds";
 
 interface CarrierStatus {
   carrier: string;
@@ -97,6 +98,11 @@ export default function SenderIdManager({ senderIds: initial }: { senderIds: Sen
                   </Badge>
                 </div>
                 <p className="mt-1 text-xs text-[var(--color-ink-400)]">Requested {formatDate(s.createdAt)}</p>
+                {matchProtectedBrand(s.requestedName) && (
+                  <p className="mt-1 text-xs font-medium text-[var(--color-amber-700)]">
+                    Uses the protected brand {matchProtectedBrand(s.requestedName)}. Confirm the client owns it before approving on any network.
+                  </p>
+                )}
                 {s.hasCacDocument ? (
                   <a
                     href={`/api/admin/sender-id/${s.id}/cac-document`}
