@@ -140,6 +140,16 @@ describe("POST /api/admin/tenants/[id]/campaigns/send — validation", () => {
     expect(res.status).toBe(400);
   });
 
+  it("blocks a threatening message before charging or sending anything", async () => {
+    const res = await callRoute({ ...VALID_BODY, message: "i want to kill you" });
+    const json = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(json.complianceFailures.map((f: { rule: number }) => f.rule)).toContain(11);
+    expect(mockedPrisma.tenant.updateMany).not.toHaveBeenCalled();
+    expect(mockedPrisma.campaign.create).not.toHaveBeenCalled();
+  });
+
   it("returns 404 when the tenant doesn't exist", async () => {
     mockedPrisma.tenant.findUnique.mockResolvedValue(null);
 
