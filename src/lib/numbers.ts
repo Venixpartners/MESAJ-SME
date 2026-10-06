@@ -21,9 +21,12 @@ export type { Carrier };
 // Stored without the leading 0 for easier matching against normalized numbers.
 const CARRIER_PREFIXES: Record<Carrier, string[]> = {
   // Note: 704 was originally Visafone's block; Visafone was acquired by
-  // MTN and its number ranges (0704, 07025, 07026) now route as MTN.
-  MTN: ["803", "806", "703", "704", "706", "810", "813", "814", "816", "903", "906", "913", "916"],
-  AIRTEL: ["802", "808", "708", "812", "701", "902", "904", "907", "901", "912"],
+  // MTN and its number ranges (0704, 07025, 07026) now route as MTN. The
+  // 0702 block is matched on its first three digits, so all of 0702 maps
+  // to MTN here; the other 0702x holders (Smile, Multi-Links, Starcomms)
+  // are data only or defunct.
+  MTN: ["803", "806", "703", "704", "706", "707", "702", "810", "813", "814", "816", "903", "906", "913", "916"],
+  AIRTEL: ["802", "808", "708", "812", "701", "902", "904", "907", "901", "911", "912"],
   GLO: ["805", "807", "705", "811", "815", "905", "915"],
   MOBILE9: ["809", "817", "818", "908", "909"],
 };

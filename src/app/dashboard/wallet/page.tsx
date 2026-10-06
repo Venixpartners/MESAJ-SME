@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { formatSignedNaira, isDebit } from "@/lib/walletDisplay";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import TopUpForm from "./TopUpForm";
@@ -68,10 +69,10 @@ export default async function WalletPage({
                   <TD>{t.type}</TD>
                   <TD
                     className={
-                      "font-mono tabular-nums " + (t.type === "SPEND" ? "text-[var(--color-red-600)]" : "text-[var(--color-success-700)]")
+                      "font-mono tabular-nums " + (isDebit(t) ? "text-[var(--color-red-600)]" : "text-[var(--color-success-700)]")
                     }
                   >
-                    {t.type === "SPEND" ? "-" : "+"}₦{Math.abs(t.amount).toLocaleString()}
+                    {formatSignedNaira(t)}
                   </TD>
                   <TD className="text-[var(--color-ink-500)]">{formatDate(t.createdAt)}</TD>
                 </TR>
