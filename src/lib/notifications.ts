@@ -17,6 +17,7 @@ import { sendCarrierBatch } from "./mesajClient";
 import { normalizeNumber } from "./numbers";
 import type { Carrier, SenderIdStatus } from "@prisma/client";
 import * as Sentry from "@sentry/nextjs";
+import { matchProtectedBrand } from "./protectedSenderIds";
 
 const APP_NAME = "Mesaj for SMEs";
 
@@ -89,7 +90,7 @@ export async function notifyCampaignRejected(params: {
   reason: string;
 }) {
   const { to, businessName, messageBody, reason } = params;
-  const preview = messageBody.length > 100 ? `${messageBody.slice(0, 100)}\u2026` : messageBody;
+  const preview = messageBody.length > 100 ? `${messageBody.slice(0, 100)}…` : messageBody;
 
   return sendEmail({
     to,
@@ -120,7 +121,7 @@ export async function notifyReportReady(params: {
   appUrl: string;
 }) {
   const { to, businessName, messageBody, recipientCount, deliveredCount, campaignId, appUrl } = params;
-  const preview = messageBody.length > 100 ? `${messageBody.slice(0, 100)}\u2026` : messageBody;
+  const preview = messageBody.length > 100 ? `${messageBody.slice(0, 100)}…` : messageBody;
 
   return sendEmail({
     to,
@@ -142,7 +143,7 @@ export async function notifyCampaignSent(params: {
   refundedAmount: number;
 }) {
   const { to, businessName, messageBody, recipientCount, totalSent, refundedAmount } = params;
-  const preview = messageBody.length > 100 ? `${messageBody.slice(0, 100)}\u2026` : messageBody;
+  const preview = messageBody.length > 100 ? `${messageBody.slice(0, 100)}…` : messageBody;
 
   const fullyFailed = totalSent === 0;
   const partiallyFailed = !fullyFailed && totalSent < recipientCount;
@@ -253,14 +254,19 @@ export async function notifyAdminNewSenderIdRequest(params: {
   if (recipients.length === 0) return { success: false, error: "ADMIN_NOTIFICATION_EMAILS not configured" };
 
   const { businessName, requestedName, cacNumber, sector, senderIdId, appUrl } = params;
+  const protectedBrand = matchProtectedBrand(requestedName);
+  const brandWarning = protectedBrand
+    ? `<p><strong>Check ownership:</strong> this Sender ID uses the protected brand ${escapeHtml(protectedBrand)}. Confirm the client owns it before approving on any network.</p>`
+    : "";
 
   return Promise.all(
     recipients.map((to) =>
       sendEmail({
         to,
-        subject: `New Sender ID request: ${requestedName}`,
+        subject: `New Sender ID request: ${requestedName}${protectedBrand ? " (protected brand, check ownership)" : ""}`,
         html: wrapHtml(`
           <p>A new Sender ID request came in, with a CAC document attached for review.</p>
+          ${brandWarning}
           <p>
             <strong>Business:</strong> ${escapeHtml(businessName)}<br />
             <strong>Requested Sender ID:</strong> ${escapeHtml(requestedName)}<br />

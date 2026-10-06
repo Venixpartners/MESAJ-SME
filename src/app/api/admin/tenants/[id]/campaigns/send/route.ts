@@ -5,6 +5,7 @@ import { cleanAndSortNumbers } from "@/lib/numbers";
 import { sendCampaignAcrossCarriers, type CarrierBatchInput, batchStatusFromResult } from "@/lib/mesajClient";
 import { campaignCost, smsUnits } from "@/lib/pricing";
 import { getSegmentInfo } from "@/lib/smsSegments";
+import { checkContentSafety } from "@/lib/campaignCompliance";
 import { loadCarrierOverrides } from "@/lib/portedNumbers";
 import { checkContentLength, checkRecipientCount, MAX_MESSAGE_SEGMENTS } from "@/lib/limits";
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit";
@@ -73,6 +74,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (!senderId || !message || !Array.isArray(numbers)) {
     return NextResponse.json({ error: "senderId, message, and numbers are required" }, { status: 400 });
+  }
+  const safety = checkContentSafety(message);
+  if (!safety.passed) {
+    return NextResponse.json(
+      { error: `This message can't be sent. ${safety.failures.map((f) => f.reason).join(" ")}`, complianceFailures: safety.failures },
+      { status: 422 }
+    );
   }
   const segmentInfo = getSegmentInfo(message);
   if (segmentInfo.segments > MAX_MESSAGE_SEGMENTS) {

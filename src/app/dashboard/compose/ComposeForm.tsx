@@ -278,7 +278,11 @@ export default function ComposeForm({
       setResult(
         data.autoApproved
           ? "Campaign approved. It is sending now and needed no review."
-          : "Campaign submitted for approval. You'll be notified once it's reviewed."
+          : data.heldForReview && Array.isArray(data.reviewFlags) && data.reviewFlags.length > 0
+            ? `Campaign submitted for review because it mentions ${data.reviewFlags
+                .map((f: { term: string }) => `"${f.term}"`)
+                .join(", ")}. The networks watch for these words, so a person checks it first. If it's rejected, the full amount goes back to your wallet.`
+            : "Campaign submitted for approval. You'll be notified once it's reviewed."
       );
       setValidation(null);
       setMessage("");
@@ -362,7 +366,7 @@ export default function ComposeForm({
             {segmentInfo.segments > 1 && (
               <p className="mt-1 text-xs text-[var(--color-amber-700)]">
                 This message is {segmentInfo.segments} parts, so each recipient costs{" "}
-                {`\u20a6${campaignCost(1, segmentInfo.segments)}`} instead of {`\u20a6${PRICE_PER_SMS}`}. It still
+                {`₦${campaignCost(1, segmentInfo.segments)}`} instead of {`₦${PRICE_PER_SMS}`}. It still
                 arrives as one message on the phone. Shorten it below {segmentInfo.encoding === "UCS2" ? 70 : 160}{" "}
                 characters to pay for one part.
               </p>
@@ -516,10 +520,10 @@ export default function ComposeForm({
           <p className="mt-4 rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-white p-3 text-sm text-[var(--color-ink-700)]">
             This campaign will cost{" "}
             <strong className="font-mono tabular-nums">
-              {`\u20a6${campaignCost(validation.totalValid, segmentInfo.segments).toLocaleString("en-NG")}`}
+              {`₦${campaignCost(validation.totalValid, segmentInfo.segments).toLocaleString("en-NG")}`}
             </strong>{" "}
             · {validation.totalValid} recipients ×{" "}
-            {segmentInfo.segments <= 1 ? "1 part" : `${segmentInfo.segments} parts`} × {`\u20a6${PRICE_PER_SMS}`}
+            {segmentInfo.segments <= 1 ? "1 part" : `${segmentInfo.segments} parts`} × {`₦${PRICE_PER_SMS}`}
           </p>
           <p className="mt-3 text-sm font-medium text-[var(--color-ink-900)]">
             Do you agree to proceed with only the {validation.totalValid} valid numbers?

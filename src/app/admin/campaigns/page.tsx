@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { checkReviewFlags } from "@/lib/reviewFlags";
 import { requireAdminPage } from "@/lib/adminAuth";
 import CampaignQueue from "./CampaignQueue";
 import { parsePageParam, totalPages as computeTotalPages, DEFAULT_PAGE_SIZE } from "@/lib/pagination";
@@ -37,6 +38,7 @@ export default async function AdminCampaignsPage({
         campaigns={campaigns.map((c) => ({
           id: c.id,
           messageBody: c.messageBody,
+          reviewFlags: checkReviewFlags(c.messageBody),
           recipientCount: c.recipientCount,
           invalidCount: c.invalidCount,
           createdAt: c.createdAt.toISOString(),

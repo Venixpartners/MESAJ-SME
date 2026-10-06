@@ -13,6 +13,8 @@ import { TableShell, THead, TH, TR, TD } from "@/components/ui/Table";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Upload, Send } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
+import { formatSignedNaira, isDebit } from "@/lib/walletDisplay";
+import { matchProtectedBrand } from "@/lib/protectedSenderIds";
 
 interface CarrierStatus {
   carrier: string;
@@ -153,7 +155,7 @@ function AdminComposeForm({ tenantId, senderIds }: { tenantId: string; senderIds
         setError(data.error ?? "Send failed");
         return;
       }
-      setResult(`Sent to ${data.totalSent} recipients.`);
+      setResult(`Sent to ${data.totalSent} ${data.totalSent === 1 ? "recipient" : "recipients"}.`);
       setValidation(null);
       setMessage("");
       setNumbersText("");
@@ -233,7 +235,7 @@ function AdminComposeForm({ tenantId, senderIds }: { tenantId: string; senderIds
               </p>
               <div className="mt-3 flex gap-2">
                 <Button variant="admin" onClick={handleSend} loading={sending} disabled={validation.totalValid === 0}>
-                  {sending ? "Sending…" : `Send to ${validation.totalValid} numbers`}
+                  {sending ? "Sending…" : `Send to ${validation.totalValid} ${validation.totalValid === 1 ? "number" : "numbers"}`}
                 </Button>
                 <Button variant="secondary" onClick={() => setValidation(null)}>
                   Cancel
@@ -429,6 +431,11 @@ function SenderIdSection({ tenantId, senderIds }: { tenantId: string; senderIds:
         {items.map((s) => (
           <div key={s.id} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-sm)]">
             <p className="font-medium text-[var(--color-ink-900)]">{s.requestedName}</p>
+            {matchProtectedBrand(s.requestedName) && (
+              <p className="mt-1 text-xs font-medium text-[var(--color-amber-700)]">
+                Uses the protected brand {matchProtectedBrand(s.requestedName)}. Confirm the client owns it before approving on any network.
+              </p>
+            )}
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {CARRIERS.map((carrier) => {
                 const cs = s.carrierStatuses.find((c) => c.carrier === carrier);
@@ -616,8 +623,8 @@ export default function ClientDetail({ tenant }: { tenant: TenantDetail }) {
               {tenant.walletTransactions.map((t) => (
                 <li key={t.id} className="flex justify-between border-b border-[var(--color-border)] py-1.5 last:border-0">
                   <span>{t.type}</span>
-                  <span className={"font-mono tabular-nums " + (t.amount < 0 ? "text-[var(--color-red-600)]" : "text-[var(--color-brand-600)]")}>
-                    {t.amount > 0 ? "+" : ""}₦{t.amount.toLocaleString()}
+                  <span className={"font-mono tabular-nums " + (isDebit(t) ? "text-[var(--color-red-600)]" : "text-[var(--color-brand-600)]")}>
+                    {formatSignedNaira(t)}
                   </span>
                 </li>
               ))}

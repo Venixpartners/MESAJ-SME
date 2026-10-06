@@ -1,7 +1,7 @@
 import { LegalPageHeader } from "@/components/LegalPageHeader";
 import { Footer } from "@/components/Footer";
 
-export const metadata = { title: "Privacy Policy | Mesaj SME" };
+export const metadata = { title: "Privacy Policy | Mesaj for SMEs" };
 
 export default function PrivacyPage() {
   return (
@@ -14,7 +14,7 @@ export default function PrivacyPage() {
         <div className="prose-legal mt-8 space-y-8 text-[15px] leading-relaxed text-[var(--color-ink-700)]">
           <section>
             <p>
-              This policy explains what Mesaj SME collects, why, and how it&apos;s handled. It applies to
+              This policy explains what Mesaj for SMEs, operated by Venix Partners Limited, collects, why, and how it&apos;s handled. It applies to
               business account holders using the Service, and, separately in the last section below, to
               the recipients of campaigns sent through it.
             </p>

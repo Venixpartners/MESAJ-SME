@@ -1,7 +1,7 @@
 import { LegalPageHeader } from "@/components/LegalPageHeader";
 import { Footer } from "@/components/Footer";
 
-export const metadata = { title: "Terms of Service | Mesaj SME" };
+export const metadata = { title: "Terms of Service | Mesaj for SMEs" };
 
 export default function TermsPage() {
   return (
@@ -15,7 +15,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-[var(--color-ink-900)]">1. Who these terms apply to</h2>
             <p className="mt-2">
-              We (&quot;we,&quot; &quot;us,&quot; &quot;the Service&quot;) are Mesaj SME, a bulk SMS platform for Nigerian small and medium
+              We (&quot;we,&quot; &quot;us,&quot; &quot;the Service&quot;) are Venix Partners Limited, trading as Mesaj for SMEs, a bulk SMS platform for Nigerian small and medium
               businesses. By creating an account, you agree to these terms on behalf of the business you
               represent. You must be authorized to act for that business and to accept these terms on its
               behalf.

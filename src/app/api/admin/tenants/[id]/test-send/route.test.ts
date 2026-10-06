@@ -100,6 +100,12 @@ describe("POST /api/admin/tenants/[id]/test-send — validation", () => {
     expect(res.status).toBe(400);
   });
 
+  it("blocks a threatening test message and never calls the gateway", async () => {
+    const res = await callRoute({ ...VALID_BODY, message: "i want to kill you" });
+    expect(res.status).toBe(422);
+    expect(mockedSendBatch).not.toHaveBeenCalled();
+  });
+
   it("rejects a message over MAX_MESSAGE_SEGMENTS", async () => {
     const res = await callRoute({ ...VALID_BODY, message: "x".repeat(1000) });
     expect(res.status).toBe(400);

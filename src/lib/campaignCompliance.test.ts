@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { checkHardFailRules } from "./campaignCompliance";
+import { checkHardFailRules, checkContentSafety } from "./campaignCompliance";
 
 describe("checkHardFailRules — clean messages", () => {
   it("passes an ordinary, non-promotional message", () => {
@@ -109,5 +109,94 @@ describe("checkHardFailRules — multiple failures collected in one pass", () =>
     const result = checkHardFailRules("Win free shit! First customers only, T&Cs apply.");
     const rules = result.failures.map((f) => f.rule).sort((a, b) => a - b);
     expect(rules).toEqual([1, 5, 7, 10]);
+  });
+});
+
+describe("checkHardFailRules — rule 11: threats", () => {
+  it.each([
+    "i want to kill you",
+    "I WILL KILL YOU",
+    "we go shoot u if you no pay",
+    "They will kidnap your children",
+    "You are going to die",
+    "You're a dead man",
+    "Your days are numbered",
+    "Watch your back",
+    "I will find you",
+    "We will burn your shop down",
+    "I'll stab him tonight",
+    "You're dead.",
+    "I'll find you",
+    "We go burn you",
+  ])("blocks %s", (message) => {
+    const result = checkHardFailRules(message);
+    expect(result.passed).toBe(false);
+    expect(result.failures.map((f) => f.rule)).toContain(11);
+  });
+
+  it.each([
+    "Kill your hunger with our new jollof combo, valid until 30 Oct.",
+    "We shoot your wedding in 4K. Call 08031234567.",
+    "Killer prices on all phones this weekend only, till Sunday.",
+    "Your order has shipped and arrives Thursday.",
+    "Hi Amaka, your appointment is at 10am. Do not miss it.",
+    "Pest control: we kill rats and cockroaches for good.",
+  ])("does not block ordinary business message: %s", (message) => {
+    const result = checkHardFailRules(message);
+    expect(result.failures.map((f) => f.rule)).not.toContain(11);
+  });
+});
+
+describe("checkContentSafety", () => {
+  it("blocks threats, profanity and slurs", () => {
+    expect(checkContentSafety("i want to kill you").passed).toBe(false);
+    expect(checkContentSafety("This shit is on sale now").passed).toBe(false);
+  });
+
+  it("does not apply the promo date rules (admin paths skip those)", () => {
+    expect(checkContentSafety("Get 50% discount on all shoes").passed).toBe(true);
+  });
+});
+
+describe("checkHardFailRules — rules 12 to 15: categories networks refuse", () => {
+  it.each([
+    ["Dear customer, update your BVN now to avoid restriction", 12],
+    ["Kindly send us your OTP to complete the upgrade", 12],
+    ["Share your PIN with our agent to unlock your account", 12],
+    ["Your account has been blocked. Call 08031234567", 12],
+    ["Your ATM card will be deactivated today", 12],
+    ["Click the link to verify your details: bit.ly/x", 12],
+    ["Hot sugar mummy available, call now", 13],
+    ["Free porn videos here", 13],
+    ["Send nudes", 13],
+    ["Pay me or else you will regret it", 14],
+    ["You are a thief and everyone will know", 14],
+    ["I will expose you tomorrow", 14],
+    ["Join our forex signals group", 15],
+    ["Double your money in 7 days", 15],
+    ["Guaranteed returns of 30% weekly returns", 15],
+    ["Get free bitcoin now", 15],
+    ["Invest today, ponzi proof plan", 15],
+  ])("blocks %s (rule %i)", (message, rule) => {
+    const result = checkHardFailRules(message);
+    expect(result.passed).toBe(false);
+    expect(result.failures.map((f) => f.rule)).toContain(rule);
+  });
+
+  it.each([
+    "Never share your PIN or OTP with anyone, including our staff.",
+    "Do not share your password with anyone.",
+    "We will never ask you to send your BVN.",
+    "Your order is ready for pickup today until 6pm.",
+    "Beware of fraudsters using our name. We never call for your PIN.",
+    "Reminder: your appointment with Dr Bello is tomorrow at 10am.",
+  ])("lets an ordinary or safety message through the hard rules: %s", (message) => {
+    const rules = checkHardFailRules(message).failures.map((f) => f.rule);
+    for (const r of [12, 13, 14, 15]) expect(rules).not.toContain(r);
+  });
+
+  it("also applies on admin paths through checkContentSafety", () => {
+    expect(checkContentSafety("Update your BVN now").passed).toBe(false);
+    expect(checkContentSafety("Double your money").passed).toBe(false);
   });
 });

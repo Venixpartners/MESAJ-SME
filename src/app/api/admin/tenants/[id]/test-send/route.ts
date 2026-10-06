@@ -4,6 +4,7 @@ import { requireAdminApi } from "@/lib/adminAuth";
 import { normalizeNumber } from "@/lib/numbers";
 import { sendCarrierBatch } from "@/lib/mesajClient";
 import { getSegmentInfo } from "@/lib/smsSegments";
+import { checkContentSafety } from "@/lib/campaignCompliance";
 import { MAX_MESSAGE_SEGMENTS } from "@/lib/limits";
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit";
 
@@ -35,6 +36,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (!senderIdId || !testNumber || !message) {
     return NextResponse.json({ error: "senderIdId, testNumber, and message are required" }, { status: 400 });
+  }
+  const safety = checkContentSafety(message);
+  if (!safety.passed) {
+    return NextResponse.json(
+      { error: `This message can't be sent. ${safety.failures.map((f) => f.reason).join(" ")}`, complianceFailures: safety.failures },
+      { status: 422 }
+    );
   }
   const segmentInfo = getSegmentInfo(message);
   if (segmentInfo.segments > MAX_MESSAGE_SEGMENTS) {
