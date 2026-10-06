@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { checkHardFailRules } from "./campaignCompliance";
+import { checkHardFailRules, checkContentSafety } from "./campaignCompliance";
 
 describe("checkHardFailRules — clean messages", () => {
   it("passes an ordinary, non-promotional message", () => {
@@ -109,5 +109,51 @@ describe("checkHardFailRules — multiple failures collected in one pass", () =>
     const result = checkHardFailRules("Win free shit! First customers only, T&Cs apply.");
     const rules = result.failures.map((f) => f.rule).sort((a, b) => a - b);
     expect(rules).toEqual([1, 5, 7, 10]);
+  });
+});
+
+describe("checkHardFailRules — rule 11: threats", () => {
+  it.each([
+    "i want to kill you",
+    "I WILL KILL YOU",
+    "we go shoot u if you no pay",
+    "They will kidnap your children",
+    "You are going to die",
+    "You're a dead man",
+    "Your days are numbered",
+    "Watch your back",
+    "I will find you",
+    "We will burn your shop down",
+    "I'll stab him tonight",
+    "You're dead.",
+    "I'll find you",
+    "We go burn you",
+  ])("blocks %s", (message) => {
+    const result = checkHardFailRules(message);
+    expect(result.passed).toBe(false);
+    expect(result.failures.map((f) => f.rule)).toContain(11);
+  });
+
+  it.each([
+    "Kill your hunger with our new jollof combo, valid until 30 Oct.",
+    "We shoot your wedding in 4K. Call 08031234567.",
+    "Killer prices on all phones this weekend only, till Sunday.",
+    "Your order has shipped and arrives Thursday.",
+    "Hi Amaka, your appointment is at 10am. Do not miss it.",
+    "Pest control: we kill rats and cockroaches for good.",
+  ])("does not block ordinary business message: %s", (message) => {
+    const result = checkHardFailRules(message);
+    expect(result.failures.map((f) => f.rule)).not.toContain(11);
+  });
+});
+
+describe("checkContentSafety", () => {
+  it("blocks threats, profanity and slurs", () => {
+    expect(checkContentSafety("i want to kill you").passed).toBe(false);
+    expect(checkContentSafety("This shit is on sale now").passed).toBe(false);
+  });
+
+  it("does not apply the promo date rules (admin paths skip those)", () => {
+    expect(checkContentSafety("Get 50% discount on all shoes").passed).toBe(true);
   });
 });

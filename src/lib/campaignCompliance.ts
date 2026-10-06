@@ -2,7 +2,8 @@
  * NCC hard-fail message checks — the mechanical, rule-checkable subset of
  * the NCC Advertisement/Promotion Guidelines that a single SMS body can
  * actually be validated against (rules 1, 2, 5, 7, 10 of the internal
- * NCC guideline doc). A message that fails any of these is rejected
+ * NCC guideline doc, plus rule 11 for threats). A message that fails
+ * any of these is rejected
  * outright at submit time — never created as a campaign, never charged
  * against the wallet, never seen by an admin — the client gets the
  * reason immediately and can fix and resubmit.
@@ -88,6 +89,47 @@ function checkPrejudicialContent(message: string): ComplianceFailure | null {
   return null;
 }
 
+// === Rule 11 — threats of violence or intimidation ===
+// Not one of the numbered rules in the internal NCC guideline doc, so it
+// takes the next free number. Added after "i want to kill you" went out on
+// 10 Aug 2026. Matches a violent verb aimed at a person ("kill you", "shoot
+// your wife"), plus a short list of stock threat phrases. Aimed at people,
+// not things, so marketing lines like "kill your hunger" or "shoot your
+// wedding" still pass.
+const VIOLENT_VERBS =
+  "kill(?:s|ed|ing)?|murder(?:s|ed|ing)?|shoot(?:s|ing)?|shot|stab(?:s|bed|bing)?|kidnap(?:s|ped|ping)?|" +
+  "rape(?:s|d)?|raping|behead(?:s|ed|ing)?|slaughter(?:s|ed|ing)?|strangle(?:s|d)?|strangling|butcher(?:s|ed|ing)?|" +
+  "poison(?:s|ed|ing)?|assassinate(?:s|d)?|assassinating";
+const THREAT_TARGETS =
+  "you|u|ya|yourself|him|her|them|" +
+  "(?:your|ur|his|their) (?:family|wife|husband|child|children|kids?|son|daughter|mother|father|mum|mom|dad|people|brother|sister)";
+const VIOLENT_THREAT_PATTERN = new RegExp(`\\b(?:${VIOLENT_VERBS})\\s+(?:${THREAT_TARGETS})\\b`, "i");
+const THREAT_PHRASE_PATTERN = new RegExp(
+  [
+    "you(?:'re| are| r)? (?:going to|gonna|will) die",
+    "you(?:'re| are|r| r) (?:a )?dead(?: man| woman| meat)?",
+    "your days are numbered",
+    "watch your back",
+    "i(?: will| go|'ll| don| dey) (?:find|deal with|end) (?:you|u)",
+    "(?:blow|burn) (?:you|u|your (?:house|shop|car|family))(?: up| down)?",
+    "set (?:you|u|your \\w+) on fire",
+  ]
+    .map((p) => `\\b${p}\\b`)
+    .join("|"),
+  "i"
+);
+
+function checkThreats(message: string): ComplianceFailure | null {
+  if (VIOLENT_THREAT_PATTERN.test(message) || THREAT_PHRASE_PATTERN.test(message)) {
+    return {
+      rule: 11,
+      ruleName: "No threats of violence or intimidation",
+      reason: "Message reads as a threat of violence against someone. It can't be sent.",
+    };
+  }
+  return null;
+}
+
 // === Rule 5 (Part 4(viii), (x)) — promos must state a duration/redemption date ===
 const PROMO_TRIGGER_WORDS = ["win", "offer", "promo", "free", "discount", "bonus"];
 const PROMO_TRIGGER_PATTERN = wordBoundaryPattern(PROMO_TRIGGER_WORDS);
@@ -152,6 +194,18 @@ function checkTermsReferenced(message: string): ComplianceFailure | null {
 }
 
 /**
+ * The content safety subset: profanity, slurs and threats. Runs on every
+ * send path, including the admin "send on behalf" and "test message"
+ * paths that skip the full NCC advertising checks. Nobody sends these.
+ */
+export function checkContentSafety(message: string): ComplianceCheckResult {
+  const failures = [checkProfanity(message), checkPrejudicialContent(message), checkThreats(message)].filter(
+    (f): f is ComplianceFailure => f !== null
+  );
+  return { passed: failures.length === 0, failures };
+}
+
+/**
  * Runs every hard-fail rule against a message body. Collects ALL
  * failures rather than stopping at the first, so a client fixing their
  * message sees every problem in one pass instead of playing whack-a-mole
@@ -161,6 +215,7 @@ export function checkHardFailRules(message: string): ComplianceCheckResult {
   const failures = [
     checkProfanity(message),
     checkPrejudicialContent(message),
+    checkThreats(message),
     checkPromoHasDate(message),
     checkThresholdStated(message),
     checkTermsReferenced(message),
