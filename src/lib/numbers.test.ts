@@ -26,6 +26,12 @@ describe("normalizeNumber", () => {
     expect(result.carrier).toBe(carrier);
   });
 
+  it("does not treat the rest of 0702 (e.g. 07020, Smile) as MTN", () => {
+    const result = normalizeNumber("07020123456");
+    expect(result.valid).toBe(false);
+    expect(result.reason).toBe("Unrecognized carrier prefix");
+  });
+
   it("recognizes 904 as Airtel", () => {
     const result = normalizeNumber("09041234567");
     expect(result.valid).toBe(true);
