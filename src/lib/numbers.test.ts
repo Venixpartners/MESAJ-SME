@@ -15,6 +15,17 @@ describe("normalizeNumber", () => {
     expect(result.carrier).toBe("MTN");
   });
 
+  it.each([
+    ["07079217859", "MTN"],
+    ["07025123456", "MTN"],
+    ["07026123456", "MTN"],
+    ["09111234567", "AIRTEL"],
+  ])("recognizes %s (previously rejected as unrecognized) as %s", (input, carrier) => {
+    const result = normalizeNumber(input);
+    expect(result.valid).toBe(true);
+    expect(result.carrier).toBe(carrier);
+  });
+
   it("recognizes 904 as Airtel", () => {
     const result = normalizeNumber("09041234567");
     expect(result.valid).toBe(true);
