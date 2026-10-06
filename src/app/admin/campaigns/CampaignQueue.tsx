@@ -14,6 +14,7 @@ import { useToast } from "@/components/ui/Toast";
 interface CampaignRow {
   id: string;
   messageBody: string;
+  reviewFlags: { category: string; term: string }[];
   recipientCount: number;
   invalidCount: number;
   createdAt: string;
@@ -104,6 +105,14 @@ export default function CampaignQueue({ campaigns: initial }: { campaigns: Campa
           <p className="mt-3 whitespace-pre-wrap rounded-[var(--radius-sm)] bg-[var(--color-ink-50)] p-3 text-sm text-[var(--color-ink-700)]">
             {c.messageBody}
           </p>
+
+          {c.reviewFlags.length > 0 && (
+            <p className="mt-2 text-xs text-[var(--color-amber-700)]">
+              Held for review. Watched words:{" "}
+              {c.reviewFlags.map((f) => `"${f.term}" (${f.category.toLowerCase()})`).join(", ")}. Check it is an honest
+              message, not a scam, before approving.
+            </p>
+          )}
 
           {rejectingId === c.id ? (
             <div className="mt-3 space-y-2">

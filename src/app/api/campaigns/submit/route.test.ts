@@ -182,6 +182,35 @@ describe("POST /api/campaigns/submit — auto-approval for compliant messages", 
   });
 });
 
+describe("POST /api/campaigns/submit — grey area words held for review", () => {
+  it("creates the campaign but skips auto approval when the message has a watched word", async () => {
+    mockAuthedUser();
+
+    const res = await POST(postRequest({ ...VALID_BODY, message: "Congratulations to our winner! Promo ends 20 Oct." }));
+    const body = await res.json();
+
+    expect(res.status).toBe(201);
+    expect(body.heldForReview).toBe(true);
+    expect(body.reviewFlags.map((f: { term: string }) => f.term)).toEqual(
+      expect.arrayContaining(["winner", "congratulations", "promo"])
+    );
+    expect(mockedPrisma.$transaction).toHaveBeenCalled(); // paid into escrow, sits in the admin queue
+    expect(mockedClaim).not.toHaveBeenCalled();
+    expect(mockedProcessNext).not.toHaveBeenCalled();
+  });
+
+  it("hard blocks phishing with a 422 before any money moves", async () => {
+    mockAuthedUser();
+
+    const res = await POST(postRequest({ ...VALID_BODY, message: "Dear customer, update your BVN today" }));
+    const body = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(body.complianceFailures.map((f: { rule: number }) => f.rule)).toContain(12);
+    expect(mockedPrisma.$transaction).not.toHaveBeenCalled();
+  });
+});
+
 describe("POST /api/campaigns/submit — idempotency", () => {
   it("returns the existing campaign without hitting the rate limiter when the key was already used", async () => {
     mockAuthedUser();

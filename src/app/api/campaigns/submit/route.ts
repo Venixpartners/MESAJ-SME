@@ -10,6 +10,7 @@ import { checkContentLength, checkRecipientCount, MAX_MESSAGE_SEGMENTS } from "@
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit";
 import { isUniqueConstraintViolation } from "@/lib/prismaErrors";
 import { checkHardFailRules } from "@/lib/campaignCompliance";
+import { checkReviewFlags } from "@/lib/reviewFlags";
 import { claimCampaignForSending, processNextCampaignBatch } from "@/lib/campaignSendProcessor";
 
 /**
@@ -244,6 +245,18 @@ export async function POST(req: NextRequest) {
       }
     }
     throw err;
+  }
+
+  // Grey area wording (see lib/reviewFlags.ts) passed the hard checks but
+  // still needs a person to read it in context. Skip auto approval and
+  // leave the campaign PENDING_APPROVAL in the admin queue, where a
+  // rejection refunds the client in full.
+  const reviewFlags = checkReviewFlags(message);
+  if (reviewFlags.length > 0) {
+    return NextResponse.json(
+      { campaign, validatedCounts: cleaned, heldForReview: true, reviewFlags },
+      { status: 201 }
+    );
   }
 
   // Every rule in lib/campaignCompliance.ts already passed (checked
