@@ -14,6 +14,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Upload, Send } from "lucide-react";
 import { useToast } from "@/components/ui/Toast";
 import { formatSignedNaira, isDebit } from "@/lib/walletDisplay";
+import { matchProtectedBrand } from "@/lib/protectedSenderIds";
 
 interface CarrierStatus {
   carrier: string;
@@ -430,6 +431,11 @@ function SenderIdSection({ tenantId, senderIds }: { tenantId: string; senderIds:
         {items.map((s) => (
           <div key={s.id} className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-sm)]">
             <p className="font-medium text-[var(--color-ink-900)]">{s.requestedName}</p>
+            {matchProtectedBrand(s.requestedName) && (
+              <p className="mt-1 text-xs font-medium text-[var(--color-amber-700)]">
+                Uses the protected brand {matchProtectedBrand(s.requestedName)}. Confirm the client owns it before approving on any network.
+              </p>
+            )}
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {CARRIERS.map((carrier) => {
                 const cs = s.carrierStatuses.find((c) => c.carrier === carrier);
