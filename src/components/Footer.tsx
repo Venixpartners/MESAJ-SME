@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { BrandLockup } from "@/components/Brand";
-import { FACEBOOK_URL, INSTAGRAM_URL, LEGAL_ENTITY, SUPPORT_EMAIL, WHATSAPP_URL } from "@/lib/site";
+import { FACEBOOK_URL, INSTAGRAM_URL, LEGAL_ENTITY, WHATSAPP_URL } from "@/lib/site";
 
 /**
  * Deliberately minimal. Every link below is one a visitor could plausibly
@@ -25,9 +25,6 @@ export function Footer() {
           <Link href="/privacy" className="py-2 hover:text-[var(--color-ink-900)]">
             Privacy
           </Link>
-          <a href={`mailto:${SUPPORT_EMAIL}`} className="py-2 hover:text-[var(--color-ink-900)]">
-            Email
-          </a>
           <a
             href={WHATSAPP_URL}
             target="_blank"

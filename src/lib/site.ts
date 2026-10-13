@@ -13,9 +13,12 @@ export const LEGAL_ENTITY = "Venix Partners Limited";
 
 export const SUPPORT_EMAIL = "support@venixpartners.com";
 
-/** Display form for humans, and the wa.me form for the link. */
-export const WHATSAPP_DISPLAY = "+234 805 288 0962";
-export const WHATSAPP_URL = "https://wa.me/2348052880962";
+/**
+ * One number for calls and WhatsApp. Display form for humans, and the
+ * wa.me form for the link.
+ */
+export const WHATSAPP_DISPLAY = "+234 708 011 7970";
+export const WHATSAPP_URL = "https://wa.me/2347080117970";
 
 export const INSTAGRAM_URL = "https://www.instagram.com/mesajsms";
 export const FACEBOOK_URL = "https://www.facebook.com/mesajsms";
